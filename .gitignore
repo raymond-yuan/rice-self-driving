@@ -106,3 +106,5 @@ data/
 
 \.DS_Store
 v3/
+
+\.idea/
