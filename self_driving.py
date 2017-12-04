@@ -37,10 +37,12 @@ class BatchGenerator(object):
             output[1] = np.stack(output[1]) # batch_size x seq_len x OUTPUT_DIM
             return output
 
-def read_csv(filename):
+def read_csv(filename, train=True):
     with open(filename, 'r') as f:
         lines = [ln.strip().split(",")[-7:-3] for ln in f.readlines()][1:]
-        lines = map(lambda x: ('./data/imgs/' + x[0], np.float32(x[1:])), lines) # imagefile, outputs
+        prefix = './data/train/' if train else './data/test/center/'
+        ext = '' if train else '.jpg'
+        lines = map(lambda x: ('./data/imgs/' + x[0] + ext, np.float32(x[1:])), lines) # imagefile, outputs
         return lines
 
 def process_csv(filename, val=5):
@@ -71,7 +73,7 @@ def process_csv(filename, val=5):
 # In[38]:
 
 (train_seq, valid_seq), (mean, std) = process_csv(filename="./data/imgs/interpolated.csv", val=5) # concatenated interpolated.csv from rosbags
-# test_seq = read_csv("challenge_2/exampleSubmissionInterpolatedFinal.csv") # interpolated.csv for testset filled with dummy values
+test_seq = read_csv("challenge_2/exampleSubmissionInterpolatedFinal.csv", train=False) # interpolated.csv for testset filled with dummy values
 
 # # Model
 graph = tf.Graph()
