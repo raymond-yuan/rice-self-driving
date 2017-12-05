@@ -4,7 +4,7 @@ import os
 from config import *
 from data_utils import process_csv, read_csv
 
-from models.komada import Komada
+from models.models import Komada
 
 (train_seq, valid_seq), (mean, std) = process_csv(filename="./data/train/interpolated.csv", val=5) # concatenated interpolated.csv from rosbags
 test_seq = read_csv("./data/test/final_example.csv", train=False) # interpolated.csv for testset filled with dummy values
