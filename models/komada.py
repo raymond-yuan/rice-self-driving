@@ -94,8 +94,9 @@ class Komada():
 
         self.train_writer = tf.summary.FileWriter('v3/train_summary', graph=graph)
         self.valid_writer = tf.summary.FileWriter('v3/valid_summary', graph=graph)
-        self.saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
+
         self.komada_model(mean, std)
+        print('finished making model')
 
     def komada_model(self, mean, std):
         output_config = {}
@@ -183,11 +184,16 @@ class Komada():
         output_config['preds'] = self.steering_predictions
         output_config['mse_autoreg_steering'] = self.mse_autoregressive_steering
 
+        self.saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
+
     def do_epoch(self, session, sequences, mode):
-        global global_train_step, global_valid_step
         test_predictions = {}
         valid_predictions = {}
+
         batch_generator = BatchGenerator(sequence=sequences, seq_len=SEQ_LEN, batch_size=BATCH_SIZE)
+        print()
+        print('batch enerate', batch_generator)
+        print()
         total_num_steps = int(1 + (batch_generator.indices[1] - 1) / SEQ_LEN)
         controller_final_state_gt_cur, controller_final_state_autoregressive_cur = None, None
         acc_loss = np.float128(0.0)
@@ -208,8 +214,8 @@ class Komada():
                                  self.controller_final_state_gt,
                                  self.controller_final_state_autoregressive],
                                 feed_dict=feed_dict)
-                self.train_writer.add_summary(summary, global_train_step)
-                global_train_step += 1
+                self.train_writer.add_summary(summary, self.global_train_step)
+                self.global_train_step += 1
             elif mode == "valid":
                 model_predictions, summary, loss, controller_final_state_autoregressive_cur = \
                     session.run([self.steering_predictions,
@@ -218,8 +224,8 @@ class Komada():
                                  self.controller_final_state_autoregressive
                                  ],
                                 feed_dict=feed_dict)
-                self.valid_writer.add_summary(summary, global_valid_step)
-                global_valid_step += 1
+                self.valid_writer.add_summary(summary, self.global_valid_step)
+                self.global_valid_step += 1
                 feed_inputs = feed_inputs[:, LEFT_CONTEXT:].flatten()
                 steering_targets = feed_targets[:, :, 0].flatten()
                 model_predictions = model_predictions.flatten()

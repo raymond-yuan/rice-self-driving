@@ -11,7 +11,6 @@ test_seq = read_csv("./data/test/final_example.csv", train=False) # interpolated
 
 # # Model
 graph = tf.Graph()
-
 with graph.as_default():
     # Build model
     model = Komada(graph, mean, std)
@@ -28,13 +27,12 @@ with graph.as_default():
 
 # In[41]:
 
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0)
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0)
 
-checkpoint_dir = os.getcwd() + "/v3"
+    checkpoint_dir = os.getcwd() + "/v3"
 
-if __name__ == '__main__':
     best_validation_score = None
-    with tf.Session(graph=graph, config=tf.ConfigProto(gpu_options=gpu_options)) as session:
+    with tf.Session(graph=graph) as session:
         session.run(tf.global_variables_initializer())
         print('Initialized')
         ckpt = tf.train.latest_checkpoint(checkpoint_dir)
@@ -66,6 +64,3 @@ if __name__ == '__main__':
             if epoch != NUM_EPOCHS - 1:
                 print("Training")
                 model.do_epoch(session=session, sequences=train_seq, mode="train")
-
-
-
