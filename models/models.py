@@ -1,7 +1,9 @@
 import tensorflow as tf
 import numpy as np
 from data_utils import BatchGenerator
+from keras.models import Sequential
 from config import *
+from keras.layers import *
 
 
 slim = tf.contrib.slim
@@ -85,19 +87,54 @@ class SamplingRNNCell(tf.nn.rnn_cell.RNNCell):
         # if self._use_ground_truth == True, we pass the ground truth as the state; otherwise, we use the model's predictions
         return new_output, (current_ground_truth if self._use_ground_truth else new_output, new_state_internal)
 
-class Model():
+
+class Model:
     def make_model(self, mean, std):
-        pass
+        raise NotImplementedError
 
     def do_epoch(self, session, sequences, mode):
-        pass
+        raise NotImplementedError
+
 
 class cnn(Model):
     def __init__(self):
         pass
 
     def make_model(self, mean, std):
-        
+        model = Sequential()
+
+        model.add(Convolution2D(32, 3, 3, border_mode='same',
+                                input_shape=input_shape))
+        model.add(Activation('relu'))
+        model.add(Convolution2D(32, 3, 3))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Dropout(0.25))
+
+        model.add(Convolution2D(64, 3, 3, border_mode='same'))
+        model.add(Activation('relu'))
+        model.add(Convolution2D(64, 3, 3))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Dropout(0.25))
+
+        model.add(Flatten())
+        model.add(Dense(512))
+        model.add(Activation('relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(nb_classes))
+        model.add(Activation('softmax'))
+
+        # Let's train the model using RMSprop
+        model.compile(loss='categorical_crossentropy',
+                      optimizer='rmsprop',
+                      metrics=['accuracy'])
+
+        return model
+
+    def do_epoch(self, session, sequences, mode):
+        batch_generator = BatchGenerator(sequence=sequences, seq_len=SEQ_LEN, batch_size=BATCH_SIZE)
+
 
 class Komada(Model):
     def __init__(self, graph, mean, std):
