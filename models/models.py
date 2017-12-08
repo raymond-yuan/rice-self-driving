@@ -43,14 +43,13 @@ def apply_vision_simple(image, keep_prob, batch_size, seq_len, scope=None, reuse
         # at this point the tensor 'net' is of shape batch_size x seq_len x ...
         aux4 = slim.fully_connected(tf.reshape(net, [batch_size, seq_len, -1]), 128, activation_fn=None)
 
-        net = slim.fully_connected(tf.reshape(net, [batch_size, seq_len, -1]), 128, activation_fn=tf.nn.relu)
-        # net = tf.nn.dropout(x=net, keep_prob=keep_prob)
-        # net = slim.fully_connected(net, 128, activation_fn=tf.nn.relu)
-        # net = slim.fully_connected(net, 512, activation_fn=tf.nn.relu)
-        # net = tf.nn.dropout(x=net, keep_prob=keep_prob)
-        # net = slim.fully_connected(net, 256, activation_fn=tf.nn.relu)
-        # net = tf.nn.dropout(x=net, keep_prob=keep_prob)
-        # net = slim.fully_connected(net, 128, activation_fn=None)
+        net = slim.fully_connected(tf.reshape(net, [batch_size, seq_len, -1]), 1024, activation_fn=tf.nn.relu)
+        net = tf.nn.dropout(x=net, keep_prob=keep_prob)
+        net = slim.fully_connected(net, 512, activation_fn=tf.nn.relu)
+        net = tf.nn.dropout(x=net, keep_prob=keep_prob)
+        net = slim.fully_connected(net, 256, activation_fn=tf.nn.relu)
+        net = tf.nn.dropout(x=net, keep_prob=keep_prob)
+        net = slim.fully_connected(net, 128, activation_fn=None)
         return layer_norm(tf.nn.elu(net + aux1 + aux2 + aux3 + aux4))  # aux[1-4] are residual connections (shortcuts)
 
 
@@ -141,10 +140,10 @@ class Komada(Model):
         self.global_train_step = 0
         self.global_valid_step = 0
 
-        self.KEEP_PROB_TRAIN = 0.35
+        self.KEEP_PROB_TRAIN = 0.25
 
-        self.train_writer = tf.summary.FileWriter('v3/train_summary', graph=graph)
-        self.valid_writer = tf.summary.FileWriter('v3/valid_summary', graph=graph)
+        self.train_writer = tf.summary.FileWriter('v4/train_summary', graph=graph)
+        self.valid_writer = tf.summary.FileWriter('v4/valid_summary', graph=graph)
 
         self.make_model(mean, std)
         print('finished making model')
@@ -247,7 +246,7 @@ class Komada(Model):
         output_config['train_step'] = self.optimizer
         output_config['preds'] = self.steering_predictions
         output_config['mse_autoreg_steering'] = self.mse_autoregressive_steering
-
+        self.summaries = tf.summary.merge_all()
         self.saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
 
     def do_epoch(self, session, sequences, mode):

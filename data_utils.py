@@ -35,11 +35,14 @@ class BatchGenerator(object):
 
 def read_csv(filename, train=True):
     with open(filename, 'r') as f:
-        lines = [ln.strip().split(",")[-7:-3] for ln in f.readlines()][1:]
-        prefix = './data/train/' if train else './data/test/center/'
+        if train:
+            lines = [ln.strip().split(",")[-7:-3] for ln in f.readlines()][1:]
+        else:
+            lines = [ln.strip().split(",") for ln in f.readlines()][1:]
+        prefix = './data/train/output/' if train else './data/test/center/'
         ext = '' if train else '.jpg'
         lines = map(lambda x: (prefix + x[0] + ext, np.float32(x[1:])), lines) # imagefile, outputs
-        return lines
+        return list(lines)
 
 def process_csv(filename, val=5):
     sum_f = np.float128([0.0] * OUTPUT_DIM)

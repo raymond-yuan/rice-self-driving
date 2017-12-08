@@ -6,7 +6,7 @@ from data_utils import process_csv, read_csv
 
 from models.models import Komada
 
-(train_seq, valid_seq), (mean, std) = process_csv(filename="./data/train/interpolated.csv", val=5) # concatenated interpolated.csv from rosbags
+(train_seq, valid_seq), (mean, std) = process_csv(filename="./data/train/output/interpolated.csv", val=5) # concatenated interpolated.csv from rosbags
 test_seq = read_csv("./data/test/final_example.csv", train=False) # interpolated.csv for testset filled with dummy values
 
 # # Model
@@ -29,7 +29,7 @@ with graph.as_default():
 
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0)
 
-    checkpoint_dir = os.getcwd() + "/v3"
+    checkpoint_dir = os.getcwd() + "/v4"
 
     best_validation_score = None
     with tf.Session(graph=graph) as session:
@@ -46,16 +46,16 @@ with graph.as_default():
             if best_validation_score is None:
                 best_validation_score = valid_score
             if valid_score < best_validation_score:
-                model.saver.save(session, 'v3/checkpoint-sdc-ch2')
+                model.saver.save(session, 'v4/checkpoint-sdc-ch2')
                 best_validation_score = valid_score
                 print('\r', "SAVED at epoch %d" % epoch)
-                with open("v3/valid-predictions-epoch%d" % epoch, "w") as out:
+                with open("v4/valid-predictions-epoch%d" % epoch, "w") as out:
                     result = np.float128(0.0)
                     for img, stats in valid_predictions.items():
                         print(img, stats, file=out)
                         result += stats[-1]
                 print("Validation unnormalized RMSE:", np.sqrt(result / len(valid_predictions)))
-                with open("v3/test-predictions-epoch%d" % epoch, "w") as out:
+                with open("v4/test-predictions-epoch%d" % epoch, "w") as out:
                     _, test_predictions = model.do_epoch(session=session, sequences=test_seq, mode="test")
                     print("frame_id,steering_angle", file=out)
                     for img, pred in test_predictions.items():
