@@ -96,43 +96,172 @@ class Model:
 
 
 class cnn(Model):
-    def __init__(self):
-        pass
+    def __init__(self, mean, std):
+        self.global_train_step = 0
+        self.global_valid_step = 0
+        self.KEEP_PROB_CONV_TRAIN = 0.75
+        self.KEEP_PROB_FC_TRAIN = 0.5
+
+        self.train_writer = tf.summary.FileWriter('cnn/train_summary', graph=graph)
+        self.valid_writer = tf.summary.FileWriter('cnn/valid_summary', graph=graph)
+
+        self.make_model(mean, std)
 
     def make_model(self, mean, std):
-        model = Sequential()
+        def weight_variable(shape):
+            '''
+            Initialize weights
+            :param shape: shape of weights, e.g. [w, h ,Cin, Cout] where
+            w: width of the filters
+            h: height of the filters
+            Cin: the number of the channels of the filters
+            Cout: the number of filters
+            :return: a tensor variable for weights with initial values
+            '''
+            initial = tf.truncated_normal(shape, stddev=0.1)
+            return tf.Variable(initial)
 
-        model.add(Convolution2D(32, 3, 3, border_mode='same',
-                                input_shape=input_shape))
-        model.add(Activation('relu'))
-        model.add(Convolution2D(32, 3, 3))
-        model.add(Activation('relu'))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Dropout(0.25))
+        def variable_summaries(var):
+            """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+            with tf.name_scope('summaries'):
+                mean = tf.reduce_mean(var)
+                tf.summary.scalar('mean', mean)
+                stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+                tf.summary.scalar('stddev', stddev)
+                tf.summary.scalar('max', tf.reduce_max(var))
+                tf.summary.scalar('min', tf.reduce_min(var))
+                tf.summary.histogram('histogram', var)
 
-        model.add(Convolution2D(64, 3, 3, border_mode='same'))
-        model.add(Activation('relu'))
-        model.add(Convolution2D(64, 3, 3))
-        model.add(Activation('relu'))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Dropout(0.25))
+        def bias_variable(shape):
+            '''
+            Initialize biases
+            :param shape: shape of biases, e.g. [Cout] where
+            Cout: the number of filters
+            :return: a tensor variable for biases with initial values
+            '''
 
-        model.add(Flatten())
-        model.add(Dense(512))
-        model.add(Activation('relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(nb_classes))
-        model.add(Activation('softmax'))
+            # IMPLEMENT YOUR BIAS_VARIABLE HERE
+            initial = tf.constant(0.1, shape=shape)
+            return tf.Variable(initial)
 
-        # Let's train the model using RMSprop
-        model.compile(loss='categorical_crossentropy',
-                      optimizer='rmsprop',
-                      metrics=['accuracy'])
+        def conv2d(x, W):
+            '''
+            Perform 2-D convolution
+            :param x: input tensor of size [N, W, H, Cin] where
+            N: the number of images
+            W: width of images
+            H: height of images
+            Cin: the number of channels of images
+            :param W: weight tensor [w, h, Cin, Cout]
+            w: width of the filters
+            h: height of the filters
+            Cin: the number of the channels of the filters = the number of channels of images
+            Cout: the number of filters
+            :return: a tensor of features extracted by the filters, a.k.a. the results after convolution
+            '''
 
-        return model
+            # IMPLEMENT YOUR CONV2D HERE
+            return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+
+        def max_pool_2x2(x):
+            '''
+            Perform non-overlapping 2-D maxpooling on 2x2 regions in the input data
+            :param x: input data
+            :return: the results of maxpooling (max-marginalized + downsampling)
+            '''
+
+            # IMPLEMENT YOUR MAX_POOL_2X2 HERE
+            return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+        def batch_norm(x, bias):
+            gamma = tf.Variable(tf.constant(1.0, shape=[x.shape[-1]]),
+                                name='gamma', trainable=True)
+            batch_mean, batch_var = tf.nn.moments(x, list(range(len(x.shape) - 1)))
+            return tf.nn.batch_normalization(x, batch_mean, batch_var, bias, gamma, var_epsilon)
+
+        # inputs
+        self.inputs = tf.placeholder(shape=(BATCH_SIZE, HEIGHT, WIDTH, CHANNELS),
+                                     dtype=tf.float32) # images
+        self.targets = tf.placeholder(shape=(BATCH_SIZE, OUTPUT_DIM),
+                                 dtype=tf.float32)  # seq_len x batch_size x OUTPUT_DIM
+        targets_normalized = (self.targets - mean) / std
+
+        self.conv_dropout = tf.placeholder(tf.float32)
+        self.fc_dropout = tf.placeholder(tf.float32)
+
+        conv1 = weight_variable([5, 5, 1, 32])
+        b1 = bias_variable([32])
+        h1 = tf.nn.relu(conv2d(self.inputs, conv1) + b1)
+        d1 = tf.nn.dropout(h1, self.conv_dropout)
+        pool1 = max_pool_2x2(d1)
+
+        conv2 = weight_variable([5, 5, 32, 64])
+        b2 = bias_variable([64])
+        h2 = tf.nn.relu(conv2d(pool1, conv2) + b2)
+        d2 = tf.nn.dropout(h2, self.conv_dropout)
+        pool2 = max_pool_2x2(d2)        
+
+        fc1 = weight_variable([7 * 7 * 64, 256])
+        b3 = bias_variable([256])
+        pool2_flat = tf.reshape(pool2, [-1, 7*7*64])
+        h3 = tf.nn.relu(tf.matmul(pool2_flat, fc1) + b3)
+        d3 = tf.nn.dropout(h3, self.fc_dropout)
+
+        fc2 = weight_variable([256, 1])
+        b4 = bias_variable([1])
+        self.y = tf.matmul(d3, fc2) + b4
+
+        lr = tf.placeholder(tf.float32)
+        rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.y))
+        self.optimizer = tf.train.RMSPropOptimizer(lr).minimize(rmse)
 
     def do_epoch(self, session, sequences, mode):
-        batch_generator = BatchGenerator(sequence=sequences, seq_len=SEQ_LEN, batch_size=BATCH_SIZE)
+        """
+        batch generator will return np arrays
+        """
+        test_predictions = {}
+        valid_predictions = {}
+        batch_generator = CNNBatchGenerator(sequence=sequences, seq_len=SEQ_LEN, batch_size=BATCH_SIZE)
+        total_num_steps = int(1 + (batch_generator.indices[1] - 1) / SEQ_LEN)
+        acc_loss = np.float128(0.0)
+        for step in range(total_num_steps):
+            feed_inputs, feed_targets = batch_generator.next()
+            feed_dict = {self.inputs: feed_inputs, self.targets: feed_targets}
+            if mode == "train":
+                feed_dict.update({self.conv_dropout: self.KEEP_PROB_CONV_TRAIN, self.fc_dropout: self.KEEP_PROB_FC_TRAIN})
+                summary, _, loss = session.run([self.optimizer], feed_dict=feed_dict)
+                self.train_writer.add_summary(summary, self.global_train_step)
+                self.global_train_step += 1
+            elif mode == "valid":
+                model_predictions, summary, loss, controller_final_state_autoregressive_cur = \
+                    session.run([self.steering_predictions,
+                                 self.summaries,
+                                 self.mse_autoregressive_steering,
+                                 self.controller_final_state_autoregressive
+                                 ],
+                                feed_dict=feed_dict)
+                self.valid_writer.add_summary(summary, self.global_valid_step)
+                self.global_valid_step += 1
+                feed_inputs = feed_inputs[:, LEFT_CONTEXT:].flatten()
+                steering_targets = feed_targets[:, :, 0].flatten()
+                model_predictions = model_predictions.flatten()
+                stats = np.stack([steering_targets, model_predictions, (steering_targets - model_predictions) ** 2])
+                for i, img in enumerate(feed_inputs):
+                    valid_predictions[img] = stats[:, i]
+            elif mode == "test":
+                model_predictions, controller_final_state_autoregressive_cur = \
+                    session.run([
+                        self.steering_predictions,
+                        self.controller_final_state_autoregressive
+                    ],
+                        feed_dict=feed_dict)
+                feed_inputs = feed_inputs[:, LEFT_CONTEXT:].flatten()
+                model_predictions = model_predictions.flatten()
+                for i, img in enumerate(feed_inputs):
+                    test_predictions[img] = model_predictions[i]
+            if mode != "test":
+                acc_loss += loss
+                print('\r', step + 1, "/", total_num_steps, np.sqrt(acc_loss / (step + 1)))
 
 
 class Komada(Model):

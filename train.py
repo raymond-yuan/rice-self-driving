@@ -8,7 +8,6 @@ from models.models import Komada
 
 (train_seq, valid_seq), (mean, std) = process_csv(filename="./data/train/output/interpolated.csv", val=5) # concatenated interpolated.csv from rosbags
 test_seq = read_csv("./data/test/final_example.csv", train=False) # interpolated.csv for testset filled with dummy values
-
 # # Model
 graph = tf.Graph()
 with graph.as_default():
