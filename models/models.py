@@ -383,9 +383,6 @@ class Komada(Model):
         valid_predictions = {}
 
         batch_generator = BatchGenerator(sequence=sequences, seq_len=SEQ_LEN, batch_size=BATCH_SIZE)
-        print()
-        print('batch enerate', batch_generator)
-        print()
         total_num_steps = int(1 + (batch_generator.indices[1] - 1) / SEQ_LEN)
         controller_final_state_gt_cur, controller_final_state_autoregressive_cur = None, None
         acc_loss = np.float128(0.0)
@@ -416,7 +413,7 @@ class Komada(Model):
                                  self.controller_final_state_autoregressive
                                  ],
                                 feed_dict=feed_dict)
-                self.valid_writer.add_summary(summary, self.global_valid_step)
+                self.valid_writer.add_summary(summary, self.global_train_step)
                 self.global_valid_step += 1
                 feed_inputs = feed_inputs[:, LEFT_CONTEXT:].flatten()
                 steering_targets = feed_targets[:, :, 0].flatten()
@@ -425,6 +422,7 @@ class Komada(Model):
                 for i, img in enumerate(feed_inputs):
                     valid_predictions[img] = stats[:, i]
             elif mode == "test":
+                print("Performing test")
                 model_predictions, controller_final_state_autoregressive_cur = \
                     session.run([
                         self.steering_predictions,
