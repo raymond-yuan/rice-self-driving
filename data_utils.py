@@ -10,6 +10,7 @@ class ImageGenerator():
 
     def next(self):
         num_examples = len(self.sequence)
+        self.num_examples = num_examples
         perm_ind = np.random.permutation(num_examples)
         while True:
             for i in range(num_examples, self.batch_size):
@@ -18,6 +19,9 @@ class ImageGenerator():
                 Y_batch = np.array([filename[1] / 255.0 for filename in batch_names])
                 yield X_batch, Y_batch
 
+
+    def get_total_steps():
+        return self.num_examples // self.batch_size
 
 class BatchGenerator(object):
     def __init__(self, sequence, seq_len, batch_size):

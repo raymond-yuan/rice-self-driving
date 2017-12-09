@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from data_utils import BatchGenerator
+from data_utils import BatchGenerator, ImageGenerator
 from keras.models import Sequential
 from config import *
 from keras.layers import *
@@ -95,8 +95,8 @@ class Model:
         raise NotImplementedError
 
 
-class cnn(Model):
-    def __init__(self, mean, std):
+class CNN(Model):
+    def __init__(self, graph, mean, std):
         self.global_train_step = 0
         self.global_valid_step = 0
         self.KEEP_PROB_CONV_TRAIN = 0.75
@@ -177,12 +177,14 @@ class cnn(Model):
             gamma = tf.Variable(tf.constant(1.0, shape=[x.shape[-1]]),
                                 name='gamma', trainable=True)
             batch_mean, batch_var = tf.nn.moments(x, list(range(len(x.shape) - 1)))
-            return tf.nn.batch_normalization(x, batch_mean, batch_var, bias, gamma, var_epsilon)
+            # return tf.nn.batch_normalization(x, batch_mean, batch_var, bias, gamma, var_epsilon)
+            return tf.nn.batch_normalization(x, batch_mean, batch_var, bias, gamma)
 
         # inputs
         self.inputs = tf.placeholder(shape=(BATCH_SIZE, HEIGHT, WIDTH, CHANNELS),
                                      dtype=tf.float32) # images
-        self.targets = tf.placeholder(shape=(BATCH_SIZE, OUTPUT_DIM),
+        self.preprocessed_inputs = tf.image.resize_images(self.inputs, (256, 140))
+        self.targets = tf.placeholder(shape=(BATCH_SIZE, 1),
                                  dtype=tf.float32)  # seq_len x batch_size x OUTPUT_DIM
         targets_normalized = (self.targets - mean) / std
 
@@ -209,59 +211,73 @@ class cnn(Model):
 
         fc2 = weight_variable([256, 1])
         b4 = bias_variable([1])
-        self.y = tf.matmul(d3, fc2) + b4
+        self.steering_predictions = tf.matmul(d3, fc2) + b4
 
-        lr = tf.placeholder(tf.float32)
-        rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.y))
-        self.optimizer = tf.train.RMSPropOptimizer(lr).minimize(rmse)
+        # Summary statistics
+        weights = [conv1, conv2, fc1, fc2]
+        bias = [b1,b2,b3,b4]
+        activs = [h1,h2,h3]
+        pools = [pool1,pool2]
+        with tf.name_scope('weights'):
+            map(variable_summaries, weights)
+        with tf.name_scope('bias'):
+            map(variable_summaries, bias)
+        with tf.name_scope('ReLU'):
+            map(variable_summaries, activs)
+        with tf.name_scope('pools'):
+            map(variable_summaries, pools)
+        self.summaries = tf.summary.merge_all()
+        # lr = tf.placeholder(tf.float32)
+        self.rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.y))
+        self.optimizer = tf.train.RMSPropOptimizer().minimize(self.rmse)
 
-    def do_epoch(self, session, sequences, mode):
+    def do_epoch(self, session, sequences, mode, generator):
         """
         batch generator will return np arrays
         """
         test_predictions = {}
         valid_predictions = {}
-        batch_generator = CNNBatchGenerator(sequence=sequences, seq_len=SEQ_LEN, batch_size=BATCH_SIZE)
-        total_num_steps = int(1 + (batch_generator.indices[1] - 1) / SEQ_LEN)
+        batch_generator = ImageGenerator(sequence=sequences, batch_size=IMAGE_BATCH_SIZE)
+        total_num_steps = batch_generator.get_total_steps()
         acc_loss = np.float128(0.0)
         for step in range(total_num_steps):
             feed_inputs, feed_targets = batch_generator.next()
             feed_dict = {self.inputs: feed_inputs, self.targets: feed_targets}
             if mode == "train":
                 feed_dict.update({self.conv_dropout: self.KEEP_PROB_CONV_TRAIN, self.fc_dropout: self.KEEP_PROB_FC_TRAIN})
-                summary, _, loss = session.run([self.optimizer], feed_dict=feed_dict)
+                summary, _, loss = session.run([self.summaries, self.rmse, self.optimizer], feed_dict=feed_dict)
                 self.train_writer.add_summary(summary, self.global_train_step)
                 self.global_train_step += 1
             elif mode == "valid":
                 model_predictions, summary, loss, controller_final_state_autoregressive_cur = \
                     session.run([self.steering_predictions,
                                  self.summaries,
-                                 self.mse_autoregressive_steering,
-                                 self.controller_final_state_autoregressive
+                                 self.rmse
                                  ],
                                 feed_dict=feed_dict)
                 self.valid_writer.add_summary(summary, self.global_valid_step)
                 self.global_valid_step += 1
-                feed_inputs = feed_inputs[:, LEFT_CONTEXT:].flatten()
+                feed_inputs = feed_inputs[:, :].flatten()
                 steering_targets = feed_targets[:, :, 0].flatten()
                 model_predictions = model_predictions.flatten()
                 stats = np.stack([steering_targets, model_predictions, (steering_targets - model_predictions) ** 2])
                 for i, img in enumerate(feed_inputs):
                     valid_predictions[img] = stats[:, i]
             elif mode == "test":
-                model_predictions, controller_final_state_autoregressive_cur = \
+                model_predictions = \
                     session.run([
-                        self.steering_predictions,
-                        self.controller_final_state_autoregressive
+                        self.steering_predictions
                     ],
                         feed_dict=feed_dict)
-                feed_inputs = feed_inputs[:, LEFT_CONTEXT:].flatten()
+                feed_inputs = feed_inputs[:, :].flatten()
                 model_predictions = model_predictions.flatten()
                 for i, img in enumerate(feed_inputs):
                     test_predictions[img] = model_predictions[i]
             if mode != "test":
                 acc_loss += loss
                 print('\r', step + 1, "/", total_num_steps, np.sqrt(acc_loss / (step + 1)))
+        print()
+        return (np.sqrt(acc_loss / total_num_steps), valid_predictions) if mode != "test" else (None, test_predictions)
 
 
 class Komada(Model):

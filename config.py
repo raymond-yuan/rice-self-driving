@@ -1,5 +1,6 @@
 SEQ_LEN = 10
 BATCH_SIZE = 4
+IMAGE_BATCH_SIZE = 50
 LEFT_CONTEXT = 5
 
 # These are the input image parameters.
