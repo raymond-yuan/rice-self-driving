@@ -1,5 +1,23 @@
 from config import *
+from scipy import misc
 import numpy as np
+
+class ImageGenerator():
+    def __init__(self, sequence, batch_size):
+        # file name, x, y, z
+        self.sequence = np.array(sequence)
+        self.batch_size = batch_size
+
+    def next(self):
+        num_examples = len(self.sequence)
+        while True:
+            perm_ind = np.random.permutation(num_examples)
+            for i in range(num_examples, self.batch_size):
+                batch_names = self.sequence[perm_ind[i:i + self.batch_size]]
+                X_batch = np.array([misc.imread(filename[0]) / 255.0 for filename in batch_names])
+                Y_batch = np.array([filename[1] / 255.0 for filename in batch_names])
+                yield X_batch, Y_batch
+
 
 class BatchGenerator(object):
     def __init__(self, sequence, seq_len, batch_size):
