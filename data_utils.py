@@ -10,8 +10,8 @@ class ImageGenerator():
 
     def next(self):
         num_examples = len(self.sequence)
+        perm_ind = np.random.permutation(num_examples)
         while True:
-            perm_ind = np.random.permutation(num_examples)
             for i in range(num_examples, self.batch_size):
                 batch_names = self.sequence[perm_ind[i:i + self.batch_size]]
                 X_batch = np.array([misc.imread(filename[0]) / 255.0 for filename in batch_names])
