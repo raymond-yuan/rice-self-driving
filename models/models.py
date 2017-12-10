@@ -252,8 +252,9 @@ class CNN(Model):
         self.rmse = tf.sqrt(tf.reduce_sum(tf.squared_difference(targets_normalized, self.steering_predictions)))
         tf.summary.scalar('RMSE_Loss', self.rmse)
         self.optimizer = tf.train.RMSPropOptimizer(self.lr).minimize(self.rmse)
-
         self.summary_op = tf.summary.merge_all()
+        self.saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
+
 
     def do_epoch(self, session, sequences, labels, mode):
         """
