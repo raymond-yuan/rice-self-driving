@@ -36,12 +36,12 @@ with graph.as_default():
 
 # In[41]:
 
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0)
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
 
     checkpoint_dir = os.getcwd() + "/%s" % model_dir
 
     best_validation_score = None
-    with tf.Session(graph=graph) as session:
+    with tf.Session(graph=graph, config=tf.ConfigProto(gpu_options=gpu_options)) as session:
         session.run(tf.global_variables_initializer())
         print('Initialized')
         ckpt = tf.train.latest_checkpoint(checkpoint_dir)
