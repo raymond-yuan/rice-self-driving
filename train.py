@@ -11,7 +11,8 @@ with graph.as_default():
     # Build model
     # model = Komada(graph, mean, std)
     model_type = CNN
-    model_dir = "cnn"
+    # model_dir = "cnn"
+    model_dir = "deep-cnn"
 
     if model_type is CNN:
         (train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std) = process_csv_cnn(filename="./data/train/output/interpolated.csv", val=25) # concatenated interpolated.csv from rosbags

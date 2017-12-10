@@ -102,8 +102,8 @@ class CNN(Model):
         self.KEEP_PROB_CONV_TRAIN = 0.75
         self.KEEP_PROB_FC_TRAIN = 0.5
 
-        self.train_writer = tf.summary.FileWriter('cnn/train_summary', graph=graph)
-        self.valid_writer = tf.summary.FileWriter('cnn/valid_summary', graph=graph)
+        self.train_writer = tf.summary.FileWriter('deep-cnn/train_summary', graph=graph)
+        self.valid_writer = tf.summary.FileWriter('deep-cnn/valid_summary', graph=graph)
 
         print('Building model')
         self.make_model(mean, std)
