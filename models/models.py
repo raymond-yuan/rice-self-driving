@@ -284,8 +284,8 @@ class CNN(Model):
                                 feed_dict=feed_dict)
                 self.valid_writer.add_summary(summary, self.global_valid_step)
                 self.global_valid_step += 1
-                feed_inputs = feed_inputs[:, :].flatten()
-                steering_targets = feed_targets[:, :, 0].flatten()
+                feed_inputs = feed_inputs.flatten()
+                steering_targets = feed_targets.flatten()
                 model_predictions = model_predictions.flatten()
                 stats = np.stack([steering_targets, model_predictions, (steering_targets - model_predictions) ** 2])
                 for i, img in enumerate(feed_inputs):
