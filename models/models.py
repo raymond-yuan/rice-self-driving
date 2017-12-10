@@ -246,7 +246,7 @@ class CNN(Model):
         #     map(variable_summaries, pools)
 
 
-        self.lr = tf.placeholder(tf.float32)
+        self.lr = 1e-3
         self.rmse = tf.sqrt(tf.reduce_sum(tf.squared_difference(targets_normalized, self.steering_predictions)))
         tf.summary.scalar('RMSE_Loss', self.rmse)
         self.optimizer = tf.train.RMSPropOptimizer(self.lr).minimize(self.rmse)
@@ -267,7 +267,7 @@ class CNN(Model):
             # print('FINISHGEED MAKING BACH')
             feed_dict = {self.inputs: feed_inputs, self.targets: feed_targets}
             if mode == "train":
-                feed_dict.update({self.conv_dropout: self.KEEP_PROB_CONV_TRAIN, self.fc_dropout: self.KEEP_PROB_FC_TRAIN, self.lr: 1e-3})
+                feed_dict.update({self.conv_dropout: self.KEEP_PROB_CONV_TRAIN, self.fc_dropout: self.KEEP_PROB_FC_TRAIN})
 
                 summary, _, loss = session.run([self.summary_op, self.optimizer, self.rmse], feed_dict=feed_dict)
                 self.train_writer.add_summary(summary, self.global_train_step)

@@ -51,9 +51,9 @@ with graph.as_default():
             model.saver.restore(sess=session, save_path=ckpt)
         for epoch in range(NUM_EPOCHS):
             print("Starting epoch %d" % epoch)
-            if epoch != NUM_EPOCHS - 1:
-                print("Training")
-                model.do_epoch(session=session, sequences=train_seq_X, labels=train_seq_Y, mode="train")
+            # if epoch != NUM_EPOCHS - 1:
+            #     print("Training")
+            #     model.do_epoch(session=session, sequences=train_seq_X, labels=train_seq_Y, mode="train")
             print("Validation:")
             valid_score, valid_predictions = model.do_epoch(session=session, sequences=valid_seq_X, labels=valid_seq_Y, mode="valid")
             if best_validation_score is None:
