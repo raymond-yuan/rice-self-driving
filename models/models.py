@@ -183,8 +183,7 @@ class CNN(Model):
             return tf.nn.batch_normalization(x, batch_mean, batch_var, bias, gamma)
 
         # inputs
-        self.inputs = tf.placeholder(shape=(-1, HEIGHT, WIDTH, CHANNELS),
-                                     dtype=tf.float32) # images
+        self.inputs = tf.placeholder(shape=(None, HEIGHT, WIDTH, CHANNELS), dtype=tf.float32) # images
 
 
         self.preprocessed_inputs = tf.image.resize_images(self.inputs, (256, 140))
@@ -236,7 +235,7 @@ class CNN(Model):
             map(variable_summaries, pools)
         self.summaries = tf.summary.merge_all()
         # lr = tf.placeholder(tf.float32)
-        self.rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.y))
+        self.rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.steering_predictions))
         self.optimizer = tf.train.RMSPropOptimizer().minimize(self.rmse)
 
     def do_epoch(self, session, sequences, mode, generator):
