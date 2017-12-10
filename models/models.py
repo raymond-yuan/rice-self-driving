@@ -235,9 +235,9 @@ class CNN(Model):
         with tf.name_scope('pools'):
             map(variable_summaries, pools)
         self.summaries = tf.summary.merge_all()
-        # lr = tf.placeholder(tf.float32)
+        self.lr = tf.placeholder(tf.float32)
         self.rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.y))
-        self.optimizer = tf.train.RMSPropOptimizer().minimize(self.rmse)
+        self.optimizer = tf.train.RMSPropOptimizer(self.lr).minimize(self.rmse)
 
     def do_epoch(self, session, sequences, mode, generator):
         """
@@ -252,7 +252,7 @@ class CNN(Model):
             feed_inputs, feed_targets = batch_generator.next()
             feed_dict = {self.inputs: feed_inputs, self.targets: feed_targets}
             if mode == "train":
-                feed_dict.update({self.conv_dropout: self.KEEP_PROB_CONV_TRAIN, self.fc_dropout: self.KEEP_PROB_FC_TRAIN})
+                feed_dict.update({self.conv_dropout: self.KEEP_PROB_CONV_TRAIN, self.fc_dropout: self.KEEP_PROB_FC_TRAIN, self.lr: 1e-3})
                 summary, _, loss = session.run([self.summaries, self.rmse, self.optimizer], feed_dict=feed_dict)
                 self.train_writer.add_summary(summary, self.global_train_step)
                 self.global_train_step += 1
