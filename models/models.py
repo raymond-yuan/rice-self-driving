@@ -265,7 +265,7 @@ class CNN(Model):
         total_num_steps = batch_generator.get_total_steps()
         acc_loss = np.float128(0.0)
         for step in range(total_num_steps):
-            feed_inputs, feed_targets = next(batch_generator.next())
+            feed_inputs, feed_targets, input_paths = next(batch_generator.next())
             # print('FINISHGEED MAKING BACH')
             feed_dict = {self.inputs: feed_inputs, self.targets: feed_targets}
             if mode == "train":
@@ -284,12 +284,12 @@ class CNN(Model):
                                 feed_dict=feed_dict)
                 self.valid_writer.add_summary(summary, self.global_valid_step)
                 self.global_valid_step += 1
-                feed_inputs = feed_inputs[:, :].flatten()
-                steering_targets = feed_targets[:, :, 0].flatten()
+                # feed_inputs = feed_inputs.flatten()
+                steering_targets = feed_targets.flatten()
                 model_predictions = model_predictions.flatten()
                 stats = np.stack([steering_targets, model_predictions, (steering_targets - model_predictions) ** 2])
-                for i, img in enumerate(feed_inputs):
-                    valid_predictions[img] = stats[:, i]
+                for i, img_path in enumerate(input_paths):
+                    valid_predictions[img_path] = stats[:, i]
             elif mode == "test":
                 feed_dict.update({self.conv_dropout: 1.0, self.fc_dropout: 1.0})
                 model_predictions = \
@@ -297,10 +297,9 @@ class CNN(Model):
                         self.steering_predictions
                     ],
                         feed_dict=feed_dict)
-                feed_inputs = feed_inputs[:, :].flatten()
                 model_predictions = model_predictions.flatten()
-                for i, img in enumerate(feed_inputs):
-                    test_predictions[img] = model_predictions[i]
+                for i, img_path in enumerate(input_paths):
+                    test_predictions[img_path] = model_predictions[i]
             if mode != "test" and step % 100 == 0:
                 acc_loss += loss
                 print('\r', step + 1, "/", total_num_steps, np.sqrt(acc_loss / (step + 1)))

@@ -31,7 +31,7 @@ class ImageGenerator(object):
 
                 Y_batch = np.array([seq[0] / 255.0 for seq in batch_labels])
                 end = time.time()
-                yield X_batch, Y_batch
+                yield X_batch, Y_batch, batch_names
 
     def get_total_steps(self):
         return self.num_examples // self.batch_size
