@@ -208,22 +208,24 @@ class CNN(Model):
         pool1 = max_pool_2x2(h2) # 25% dropout
         d1 = tf.nn.dropout(pool1, self.conv_dropout)
 
-        conv3 = weight_variable([3,3,32,64])
+        conv3 = weight_variable([3, 3, 32, 64])
         b3 = bias_variable([64])
         h3 = tf.nn.relu(conv2d(d1, conv3) + b3)
 
         conv4 = weight_variable([3,3,64,64])
         b4 = bias_variable([64])
         h4 = tf.nn.relu(conv2d(h3, conv4) + b4)
+        pool2 = max_pool_2x2(h4)
+        d2 = tf.nn.dropout(pool2, self.conv_dropout)
 
         # None, 64, 35, 64
-        print('POOL ', h4.get_shape().as_list())
+        print('POOL ', d2.get_shape().as_list())
         new_shape = 1
-        for s in h4.get_shape().as_list()[1:]:
+        for s in d2.get_shape().as_list()[1:]:
             new_shape *= s
         fc1 = weight_variable([new_shape, 512])
         bfc1 = bias_variable([512])
-        pool2_flat = tf.reshape(h4, [-1, new_shape])
+        pool2_flat = tf.reshape(d2, [-1, new_shape])
         h3 = tf.nn.relu(tf.matmul(pool2_flat, fc1) + bfc1)
         d3 = tf.nn.dropout(h3, self.fc_dropout)
 
