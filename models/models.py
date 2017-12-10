@@ -197,7 +197,7 @@ class CNN(Model):
         self.fc_dropout = tf.placeholder(tf.float32)
 
         conv1 = weight_variable([3, 3, 3, 64])
-        b1 = bias_variable([32])
+        b1 = bias_variable([64])
         h1 = tf.nn.relu(conv2d(self.preprocessed_inputs, conv1) + b1)
         # d1 = tf.nn.dropout(h1, self.conv_dropout)
         # pool1 = max_pool_2x2(d1)
