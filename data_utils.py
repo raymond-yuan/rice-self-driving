@@ -4,6 +4,31 @@ import cv2
 import numpy as np
 import time
 
+class TestDataGenerator(object):
+    def __init__(self, sequence_X, batch_size):
+        # file name, x, y, z
+
+        self.sequence_X = np.array(sequence_X)
+        self.batch_size = batch_size
+        num_examples = len(self.sequence_X)
+        self.num_examples = num_examples
+        print('NUM EXAMPLES {}, BATCH SIZE {}'.format(self.num_examples, self.batch_size))
+
+    def next(self):
+
+        perm_ind = np.random.permutation(self.num_examples)
+        while True:
+            for i in range(0, self.num_examples, self.batch_size):
+                start = time.time()
+                indxs = perm_ind[np.arange(i, i + self.batch_size, SEQ_LEN)]
+                examples = np.array([self.sequence_X[j - LEFT_CONTEXT: j + SEQ_LEN] for j in indxs])
+                examples = np.stack(examples)
+                dummy_labels = np.zeros() # batch_size x seq_len x OUTPUT_DIM
+                yield examples
+
+    def get_total_steps(self):
+        return int(1 + (len(self.sequence_X) - 1) / self.batch_size)
+
 class ImageGenerator(object):
     def __init__(self, sequence_X, sequence_Y, batch_size):
         # file name, x, y, z
@@ -84,7 +109,7 @@ def read_csv(filename, train=True, cnn=False):
 
             return (filenames, data)
         else:
-            lines = np.array(map(lambda x: (prefix + x[0] + ext, np.float32(x[1:])), lines)) # imagefile, outputs
+            lines = list(map(lambda x: (prefix + x[0] + ext, np.float32(x[1:])), lines)) # imagefile, outputs
 
             return lines
 
@@ -148,3 +173,31 @@ def process_csv_cnn(filename, val=5):
     print(len(train_seq_X), len(valid_seq_X))
     print(mean, std) # we will need these statistics to normalize the outputs (and ground truth inputs)
     return ((train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std))
+
+def video_to_frames(path_to_video, output_dir):
+    import cv2
+    import os
+
+    vc = cv2.VideoCapture(path_to_video)
+    c = 1
+
+    if vc.isOpened():
+        rval, frame = vc.read()
+    else:
+        rval = False
+
+    while rval:
+        rval, frame = vc.read()
+        frame = cv2.resize(frame, (640, 480))
+        output_image_path = os.path.join(output_dir, str(c).zfill(10) + ".jpg")
+        cv2.imwrite(output_image_path, frame)
+        c = c + 1
+        if c % 100 == 0:
+            print(c)
+        # cv2.waitKey(1)
+    vc.release()
+
+
+if __name__ == "__main__":
+    video_to_frames(r"./data/demo/raw_footage/IMG_0200.MOV",
+                    r"./data/demo")
