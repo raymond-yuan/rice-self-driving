@@ -4,6 +4,31 @@ import cv2
 import numpy as np
 import time
 
+class TestDataGenerator(object):
+    def __init__(self, sequence_X, batch_size):
+        # file name, x, y, z
+
+        self.sequence_X = np.array(sequence_X)
+        self.batch_size = batch_size
+        num_examples = len(self.sequence_X)
+        self.num_examples = num_examples
+        print('NUM EXAMPLES {}, BATCH SIZE {}'.format(self.num_examples, self.batch_size))
+
+    def next(self):
+
+        perm_ind = np.random.permutation(self.num_examples)
+        while True:
+            for i in range(0, self.num_examples, self.batch_size):
+                start = time.time()
+                indxs = perm_ind[np.arange(i, i + self.batch_size, SEQ_LEN)]
+                examples = np.array([self.sequence_X[j - LEFT_CONTEXT: j + SEQ_LEN] for j in indxs])
+                examples = np.stack(examples)
+                dummy_labels = np.zeros() # batch_size x seq_len x OUTPUT_DIM
+                yield examples
+
+    def get_total_steps(self):
+        return int(1 + (len(self.sequence_X) - 1) / self.batch_size)
+
 class ImageGenerator(object):
     def __init__(self, sequence_X, sequence_Y, batch_size):
         # file name, x, y, z
