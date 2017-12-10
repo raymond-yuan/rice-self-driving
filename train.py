@@ -41,6 +41,9 @@ with graph.as_default():
             model.saver.restore(sess=session, save_path=ckpt)
         for epoch in range(NUM_EPOCHS):
             print("Starting epoch %d" % epoch)
+            if epoch != NUM_EPOCHS - 1:
+                print("Training")
+                model.do_epoch(session=session, sequences=train_seq, mode="train")
             print("Validation:")
             valid_score, valid_predictions = model.do_epoch(session=session, sequences=valid_seq, mode="valid")
             if best_validation_score is None:
@@ -61,6 +64,3 @@ with graph.as_default():
                     for img, pred in test_predictions.items():
                         img = img.replace("challenge_2/Test-final/center/", "")
                         print("%s,%f" % (img, pred), file=out)
-            if epoch != NUM_EPOCHS - 1:
-                print("Training")
-                model.do_epoch(session=session, sequences=train_seq, mode="train")
