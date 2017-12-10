@@ -109,7 +109,7 @@ def read_csv(filename, train=True, cnn=False):
 
             return (filenames, data)
         else:
-            lines = np.array(map(lambda x: (prefix + x[0] + ext, np.float32(x[1:])), lines)) # imagefile, outputs
+            lines = list(map(lambda x: (prefix + x[0] + ext, np.float32(x[1:])), lines)) # imagefile, outputs
 
             return lines
 

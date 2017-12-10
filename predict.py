@@ -7,7 +7,7 @@ from models.models import *
 
 ### SET UP CONFIG FOR PREDICTIONS ###
 checkpoint_dir = './v4/'
-test_imgs_dir = './data/test/bike/'
+test_imgs_dir = './data/test/center/' # './data/test/bike/'
 test_seq = os.listdir(test_imgs_dir)
 test_seq = list(map(lambda x: test_imgs_dir + x, test_seq))
 dummy_labels = np.random.random((len(test_seq), 3))
