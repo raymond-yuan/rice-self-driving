@@ -105,7 +105,9 @@ class CNN(Model):
         self.train_writer = tf.summary.FileWriter('cnn/train_summary', graph=graph)
         self.valid_writer = tf.summary.FileWriter('cnn/valid_summary', graph=graph)
 
+        print('Building model')
         self.make_model(mean, std)
+        print('finished making model')
 
     def make_model(self, mean, std):
         def weight_variable(shape):
@@ -181,9 +183,15 @@ class CNN(Model):
             return tf.nn.batch_normalization(x, batch_mean, batch_var, bias, gamma)
 
         # inputs
-        self.inputs = tf.placeholder(shape=(BATCH_SIZE, HEIGHT, WIDTH, CHANNELS),
+        self.inputs = tf.placeholder(shape=(-1, HEIGHT, WIDTH, CHANNELS),
                                      dtype=tf.float32) # images
+
+
         self.preprocessed_inputs = tf.image.resize_images(self.inputs, (256, 140))
+
+        print('Input Shape: {}\nDownsample: {}'.format(self.inputs.get_shape().as_list(),
+                                                       self.preprocessed_inputs.get_shape().as_list())
+              )
         self.targets = tf.placeholder(shape=(BATCH_SIZE, 1),
                                  dtype=tf.float32)  # seq_len x batch_size x OUTPUT_DIM
         targets_normalized = (self.targets - mean) / std
@@ -191,9 +199,9 @@ class CNN(Model):
         self.conv_dropout = tf.placeholder(tf.float32)
         self.fc_dropout = tf.placeholder(tf.float32)
 
-        conv1 = weight_variable([5, 5, 1, 32])
+        conv1 = weight_variable([5, 5, 3, 32])
         b1 = bias_variable([32])
-        h1 = tf.nn.relu(conv2d(self.inputs, conv1) + b1)
+        h1 = tf.nn.relu(conv2d(self.preprocessed_inputs, conv1) + b1)
         d1 = tf.nn.dropout(h1, self.conv_dropout)
         pool1 = max_pool_2x2(d1)
 
@@ -202,7 +210,7 @@ class CNN(Model):
         h2 = tf.nn.relu(conv2d(pool1, conv2) + b2)
         d2 = tf.nn.dropout(h2, self.conv_dropout)
         pool2 = max_pool_2x2(d2)        
-
+        print('POOL ', pool2.get_shape().as_list())
         fc1 = weight_variable([7 * 7 * 64, 256])
         b3 = bias_variable([256])
         pool2_flat = tf.reshape(pool2, [-1, 7*7*64])
