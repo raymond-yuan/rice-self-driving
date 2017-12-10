@@ -7,7 +7,7 @@ from models.models import *
 
 ### SET UP CONFIG FOR PREDICTIONS ###
 checkpoint_dir = './v4/'
-test_imgs_dir = './data/test/center/' # './data/test/bike/'
+test_imgs_dir = './data/demo/' # './data/test/bike/'
 test_seq = os.listdir(test_imgs_dir)
 test_seq = list(map(lambda x: test_imgs_dir + x, test_seq))
 dummy_labels = np.random.random((len(test_seq), 3))
@@ -34,7 +34,7 @@ with graph.as_default():
         ckpt = tf.train.latest_checkpoint(checkpoint_dir)
         assert ckpt is not None, 'Trying to load an invalid checkpoint!'
         model.saver.restore(sess=session, save_path=ckpt)
-        with open("{}-test-predictions".format(checkpoint_dir), "w") as out:
+        with open("{}-test-predictions".format("./v4_model"), "w") as out:
             _, test_predictions = model.do_epoch(session=session, sequences=input_test_seq, labels=None,  mode='test')
             for img, pred in test_predictions.items():
                 # img = img.replace("challenge_2/Test-final/center/", "")
