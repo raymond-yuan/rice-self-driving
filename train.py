@@ -2,19 +2,28 @@ import tensorflow as tf
 import numpy as np
 import os
 from config import *
-from data_utils import process_csv, read_csv
-
+from data_utils import *
 from models.models import *
 
-(train_seq, valid_seq), (mean, std) = process_csv(filename="./data/train/output/interpolated.csv", val=5) # concatenated interpolated.csv from rosbags
-test_seq = read_csv("./data/test/final_example.csv", train=False) # interpolated.csv for testset filled with dummy values
 # # Model
 graph = tf.Graph()
 with graph.as_default():
     # Build model
     # model = Komada(graph, mean, std)
-    model = CNN(graph, mean, std)
+    model_type = CNN
     model_dir = "cnn"
+
+    if model_type is CNN:
+        (train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std) = process_csv_cnn(filename="./data/train/output/interpolated.csv", val=5) # concatenated interpolated.csv from rosbags
+        test_seq_X, test_seq_Y = read_csv("./data/test/final_example.csv", train=False, cnn=True) # interpolated.csv for testset filled with dummy values
+
+    else:
+        (train_seq_X, valid_seq_X), (mean, std) = process_csv(filename="./data/train/output/interpolated.csv", val=5) # concatenated interpolated.csv from rosbags
+        test_seq_X = read_csv("./data/test/final_example.csv", train=False) # interpolated.csv for testset filled with dummy values
+
+        train_seq_Y, valid_seq_Y, test_seq_Y = None, None, None
+
+    model = model_type(graph, mean, std)
 
 # # Training
 #
@@ -43,9 +52,9 @@ with graph.as_default():
             print("Starting epoch %d" % epoch)
             if epoch != NUM_EPOCHS - 1:
                 print("Training")
-                model.do_epoch(session=session, sequences=train_seq, mode="train")
+                model.do_epoch(session=session, sequences=train_seq_X, labels=train_seq_Y, mode="train")
             print("Validation:")
-            valid_score, valid_predictions = model.do_epoch(session=session, sequences=valid_seq, mode="valid")
+            valid_score, valid_predictions = model.do_epoch(session=session, sequences=valid_seq_X, labels=valid_seq_Y, mode="valid")
             if best_validation_score is None:
                 best_validation_score = valid_score
             if valid_score < best_validation_score:
@@ -59,7 +68,7 @@ with graph.as_default():
                         result += stats[-1]
                 print("Validation unnormalized RMSE:", np.sqrt(result / len(valid_predictions)))
                 with open("%s/test-predictions-epoch%d" % model_dir, epoch, "w") as out:
-                    _, test_predictions = model.do_epoch(session=session, sequences=test_seq, mode="test")
+                    _, test_predictions = model.do_epoch(session=session, sequences=test_seq_X, labels=test_seq_Y, mode="test")
                     print("frame_id,steering_angle", file=out)
                     for img, pred in test_predictions.items():
                         img = img.replace("challenge_2/Test-final/center/", "")

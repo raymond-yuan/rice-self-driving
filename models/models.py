@@ -91,7 +91,7 @@ class Model:
     def make_model(self, mean, std):
         raise NotImplementedError
 
-    def do_epoch(self, session, sequences, mode):
+    def do_epoch(self, session, sequences, labels, mode):
         raise NotImplementedError
 
 
@@ -184,16 +184,14 @@ class CNN(Model):
 
         # inputs
         self.inputs = tf.placeholder(shape=(None, HEIGHT, WIDTH, CHANNELS), dtype=tf.float32) # images
-
-
         self.preprocessed_inputs = tf.image.resize_images(self.inputs, (256, 140))
 
         print('Input Shape: {}\nDownsample: {}'.format(self.inputs.get_shape().as_list(),
                                                        self.preprocessed_inputs.get_shape().as_list())
               )
-        self.targets = tf.placeholder(shape=(BATCH_SIZE, 1),
+        self.targets = tf.placeholder(shape=(IMAGE_BATCH_SIZE,),
                                  dtype=tf.float32)  # seq_len x batch_size x OUTPUT_DIM
-        targets_normalized = (self.targets - mean) / std
+        targets_normalized = (self.targets - mean[0]) / std[0]
 
         self.conv_dropout = tf.placeholder(tf.float32)
         self.fc_dropout = tf.placeholder(tf.float32)
@@ -209,10 +207,15 @@ class CNN(Model):
         h2 = tf.nn.relu(conv2d(pool1, conv2) + b2)
         d2 = tf.nn.dropout(h2, self.conv_dropout)
         pool2 = max_pool_2x2(d2)
+
+        # None, 64, 35, 64
         print('POOL ', pool2.get_shape().as_list())
-        fc1 = weight_variable([7 * 7 * 64, 256])
+        new_shape = 1
+        for s in pool2.get_shape().as_list()[1:]:
+            new_shape *= s
+        fc1 = weight_variable([new_shape, 256])
         b3 = bias_variable([256])
-        pool2_flat = tf.reshape(pool2, [-1, 7*7*64])
+        pool2_flat = tf.reshape(pool2, [-1, new_shape])
         h3 = tf.nn.relu(tf.matmul(pool2_flat, fc1) + b3)
         d3 = tf.nn.dropout(h3, self.fc_dropout)
 
@@ -233,33 +236,38 @@ class CNN(Model):
             map(variable_summaries, activs)
         with tf.name_scope('pools'):
             map(variable_summaries, pools)
-        self.summaries = tf.summary.merge_all()
+
 
         self.lr = tf.placeholder(tf.float32)
-        self.rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.steering_predictions))
+        self.rmse = tf.sqrt(tf.reduce_sum(tf.squared_difference(targets_normalized, self.steering_predictions)))
+        tf.summary.scalar('RMSE_Loss', self.rmse)
         self.optimizer = tf.train.RMSPropOptimizer(self.lr).minimize(self.rmse)
 
-    def do_epoch(self, session, sequences, mode):
+        self.summary_op = tf.summary.merge_all()
+
+    def do_epoch(self, session, sequences, labels, mode):
         """
         batch generator will return np arrays
         """
         test_predictions = {}
         valid_predictions = {}
-        batch_generator = ImageGenerator(sequence=sequences, batch_size=IMAGE_BATCH_SIZE)
+        batch_generator = ImageGenerator(sequence_X=sequences, sequence_Y=labels, batch_size=IMAGE_BATCH_SIZE)
         total_num_steps = batch_generator.get_total_steps()
         acc_loss = np.float128(0.0)
         for step in range(total_num_steps):
-            feed_inputs, feed_targets = batch_generator.next()
+            feed_inputs, feed_targets = next(batch_generator.next())
+            # print('FINISHGEED MAKING BACH')
             feed_dict = {self.inputs: feed_inputs, self.targets: feed_targets}
             if mode == "train":
                 feed_dict.update({self.conv_dropout: self.KEEP_PROB_CONV_TRAIN, self.fc_dropout: self.KEEP_PROB_FC_TRAIN, self.lr: 1e-3})
-                summary, _, loss = session.run([self.summaries, self.rmse, self.optimizer], feed_dict=feed_dict)
+
+                summary, _, loss = session.run([self.summary_op, self.optimizer, self.rmse], feed_dict=feed_dict)
                 self.train_writer.add_summary(summary, self.global_train_step)
                 self.global_train_step += 1
             elif mode == "valid":
-                model_predictions, summary, loss, controller_final_state_autoregressive_cur = \
+                model_predictions, summary, loss = \
                     session.run([self.steering_predictions,
-                                 self.summaries,
+                                 self.summary_op,
                                  self.rmse
                                  ],
                                 feed_dict=feed_dict)
@@ -281,7 +289,7 @@ class CNN(Model):
                 model_predictions = model_predictions.flatten()
                 for i, img in enumerate(feed_inputs):
                     test_predictions[img] = model_predictions[i]
-            if mode != "test":
+            if mode != "test" and step % 100 == 0:
                 acc_loss += loss
                 print('\r', step + 1, "/", total_num_steps, np.sqrt(acc_loss / (step + 1)))
         print()
@@ -402,7 +410,7 @@ class Komada(Model):
         self.summaries = tf.summary.merge_all()
         self.saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
 
-    def do_epoch(self, session, sequences, mode):
+    def do_epoch(self, session, sequences, labels, mode):
         test_predictions = {}
         valid_predictions = {}
 
