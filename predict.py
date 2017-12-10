@@ -10,6 +10,7 @@ checkpoint_dir = './v4/'
 test_imgs_dir = './data/test/center/' # './data/test/bike/'
 test_seq = os.listdir(test_imgs_dir)
 test_seq = list(map(lambda x: test_imgs_dir + x, test_seq))
+test_seq = [val for val in test_seq if int(val.split('/')[-1].split('.')[0]) % 3 == 0]
 dummy_labels = np.random.random((len(test_seq), 3))
 input_test_seq = list(zip(test_seq, dummy_labels))
 
