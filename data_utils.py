@@ -5,22 +5,25 @@ import numpy as np
 class ImageGenerator():
     def __init__(self, sequence, batch_size):
         # file name, x, y, z
-        self.sequence = np.array(sequence)
-        self.batch_size = batch_size
 
-    def next(self):
+        self.sequence = sequence
+        self.batch_size = batch_size
         num_examples = len(self.sequence)
         self.num_examples = num_examples
-        perm_ind = np.random.permutation(num_examples)
+
+    def next(self):
+
+
+        perm_ind = np.random.permutation(self.num_examples)
         while True:
-            for i in range(num_examples, self.batch_size):
+            for i in range(self.num_examples, self.batch_size):
                 batch_names = self.sequence[perm_ind[i:i + self.batch_size]]
-                X_batch = np.array([misc.imread(filename[0]) / 255.0 for filename in batch_names])
-                Y_batch = np.array([filename[1] / 255.0 for filename in batch_names])
+                X_batch = np.array([misc.imread(seq[0]) / 255.0 for seq in batch_names])
+                Y_batch = np.array([seq[1, 0] / 255.0 for seq in batch_names])
                 yield X_batch, Y_batch
 
 
-    def get_total_steps():
+    def get_total_steps(self):
         return self.num_examples // self.batch_size
 
 class BatchGenerator(object):
