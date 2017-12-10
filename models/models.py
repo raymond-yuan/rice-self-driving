@@ -208,7 +208,7 @@ class CNN(Model):
         b2 = bias_variable([64])
         h2 = tf.nn.relu(conv2d(pool1, conv2) + b2)
         d2 = tf.nn.dropout(h2, self.conv_dropout)
-        pool2 = max_pool_2x2(d2)        
+        pool2 = max_pool_2x2(d2)
         print('POOL ', pool2.get_shape().as_list())
         fc1 = weight_variable([7 * 7 * 64, 256])
         b3 = bias_variable([256])
@@ -234,15 +234,10 @@ class CNN(Model):
         with tf.name_scope('pools'):
             map(variable_summaries, pools)
         self.summaries = tf.summary.merge_all()
-<<<<<<< HEAD
-        # lr = tf.placeholder(tf.float32)
-        self.rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.steering_predictions))
-        self.optimizer = tf.train.RMSPropOptimizer().minimize(self.rmse)
-=======
+
         self.lr = tf.placeholder(tf.float32)
-        self.rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.y))
+        self.rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.steering_predictions))
         self.optimizer = tf.train.RMSPropOptimizer(self.lr).minimize(self.rmse)
->>>>>>> 21c86c9ca5754c450f303f1ab546a868a3077ed6
 
     def do_epoch(self, session, sequences, mode, generator):
         """
