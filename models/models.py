@@ -239,7 +239,7 @@ class CNN(Model):
         self.rmse = tf.sqrt(tf.squared_difference(targets_normalized, self.steering_predictions))
         self.optimizer = tf.train.RMSPropOptimizer(self.lr).minimize(self.rmse)
 
-    def do_epoch(self, session, sequences, mode, generator):
+    def do_epoch(self, session, sequences, mode):
         """
         batch generator will return np arrays
         """
