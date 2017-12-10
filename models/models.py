@@ -183,18 +183,18 @@ class CNN(Model):
             return tf.nn.batch_normalization(x, batch_mean, batch_var, bias, gamma)
 
         # inputs
-        self.inputs = tf.placeholder(shape=(None, HEIGHT, WIDTH, CHANNELS), dtype=tf.float32) # images
+        self.inputs = tf.placeholder(shape=(None, HEIGHT, WIDTH, CHANNELS), dtype=tf.float32, name="inputs") # images
         self.preprocessed_inputs = tf.image.resize_images(self.inputs, (256, 140))
 
         print('Input Shape: {}\nDownsample: {}'.format(self.inputs.get_shape().as_list(),
                                                        self.preprocessed_inputs.get_shape().as_list())
               )
         self.targets = tf.placeholder(shape=(IMAGE_BATCH_SIZE,),
-                                 dtype=tf.float32)  # seq_len x batch_size x OUTPUT_DIM
+                                 dtype=tf.float32, name="targets")  # seq_len x batch_size x OUTPUT_DIM
         targets_normalized = (self.targets - mean[0]) / std[0]
 
-        self.conv_dropout = tf.placeholder(tf.float32)
-        self.fc_dropout = tf.placeholder(tf.float32)
+        self.conv_dropout = tf.placeholder(tf.float32, name="conv dropout")
+        self.fc_dropout = tf.placeholder(tf.float32, name="fc dropout")
 
         conv1 = weight_variable([3, 3, 3, 32])
         b1 = bias_variable([32])
@@ -275,6 +275,7 @@ class CNN(Model):
                 self.train_writer.add_summary(summary, self.global_train_step)
                 self.global_train_step += 1
             elif mode == "valid":
+                feed_dict.update({self.conv_dropout: 1.0, self.fc_dropout: 1.0})
                 model_predictions, summary, loss = \
                     session.run([self.steering_predictions,
                                  self.summary_op,
@@ -290,6 +291,7 @@ class CNN(Model):
                 for i, img in enumerate(feed_inputs):
                     valid_predictions[img] = stats[:, i]
             elif mode == "test":
+                feed_dict.update({self.conv_dropout: 1.0, self.fc_dropout: 1.0})
                 model_predictions = \
                     session.run([
                         self.steering_predictions
