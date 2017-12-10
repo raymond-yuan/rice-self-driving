@@ -173,3 +173,31 @@ def process_csv_cnn(filename, val=5):
     print(len(train_seq_X), len(valid_seq_X))
     print(mean, std) # we will need these statistics to normalize the outputs (and ground truth inputs)
     return ((train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std))
+
+def video_to_frames(path_to_video, output_dir):
+    import cv2
+    import os
+
+    vc = cv2.VideoCapture(path_to_video)
+    c = 1
+
+    if vc.isOpened():
+        rval, frame = vc.read()
+    else:
+        rval = False
+
+    while rval:
+        rval, frame = vc.read()
+        frame = cv2.resize(frame, (640, 480))
+        output_image_path = os.path.join(output_dir, str(c).zfill(10) + ".jpg")
+        cv2.imwrite(output_image_path, frame)
+        c = c + 1
+        if c % 100 == 0:
+            print(c)
+        # cv2.waitKey(1)
+    vc.release()
+
+
+if __name__ == "__main__":
+    video_to_frames(r"./data/demo/raw_footage/IMG_0200.MOV",
+                    r"./data/demo")
