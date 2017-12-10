@@ -10,18 +10,22 @@ BLUE =  (  0,   0, 255)
 GREEN = (  0, 255,   0)
 RED =   (255,   0,   0)
 
-pred_path = "./test-predictions-epoch44"
+# pred_path = "./test-predictions-epoch44"
+pred_path = "./v4_model-test-predictions"
 true_path = "data/test/CH2_final_evaluation.csv"
 img_path = "data/test/center/*.jpg"
-
+true_path = pred_path
 preds = pd.read_csv(pred_path)
 true = pd.read_csv(true_path)
 filenames = glob.glob(img_path)
 
 preds['path'] = preds['frame_id']
 preds['frame_id'] = preds['frame_id'].map(lambda x: x.split('/')[-1].split('.')[0])
+true['frame_id'] = true['frame_id'].map(
+    lambda x: x.split('/')[-1].split('.')[0])
 
-true.columns = ['frame_id', 'true_steering_angle', 'public']
+# true.columns = ['frame_id', 'true_steering_angle', 'public']
+true.columns = ['frame_id', 'true_steering_angle']
 true['frame_id'] = true['frame_id'].map(lambda x: str(x))
 assert(len(preds) == len(true))
 
@@ -59,12 +63,12 @@ for i in range(len(filenames)):
 
     # draw steering wheel
     radius = 50
-    pygame.draw.circle(screen, WHITE, [320, 300], radius, 2)
+    # pygame.draw.circle(screen, WHITE, [320, 300], radius, 2)
 
     # draw cricle for true angle
     x = radius * np.cos(np.pi/2 + true_angle)
     y = radius * np.sin(np.pi/2 + true_angle)
-    pygame.draw.circle(screen, WHITE, [320 + int(x), 300 - int(y)], 7)
+    # pygame.draw.circle(screen, WHITE, [320 + int(x), 300 - int(y)], 7)
 
     # draw cricle for predicted angle
     x = radius * np.cos(np.pi/2 + angle)
