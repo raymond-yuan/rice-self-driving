@@ -14,7 +14,7 @@ with graph.as_default():
     model_dir = "cnn"
 
     if model_type is CNN:
-        (train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std) = process_csv_cnn(filename="./data/train/output/interpolated.csv", val=5) # concatenated interpolated.csv from rosbags
+        (train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std) = process_csv_cnn(filename="./data/train/output/interpolated.csv", val=25) # concatenated interpolated.csv from rosbags
         test_seq_X, test_seq_Y = read_csv("./data/test/final_example.csv", train=False, cnn=True) # interpolated.csv for testset filled with dummy values
 
     else:
