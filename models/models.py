@@ -193,8 +193,8 @@ class CNN(Model):
                                  dtype=tf.float32, name="targets")  # seq_len x batch_size x OUTPUT_DIM
         targets_normalized = (self.targets - mean[0]) / std[0]
 
-        self.conv_dropout = tf.placeholder(tf.float32, name="conv dropout")
-        self.fc_dropout = tf.placeholder(tf.float32, name="fc dropout")
+        self.conv_dropout = tf.placeholder(tf.float32, name="conv_dropout")
+        self.fc_dropout = tf.placeholder(tf.float32, name="fc_dropout")
 
         conv1 = weight_variable([3, 3, 3, 32])
         b1 = bias_variable([32])
