@@ -37,7 +37,7 @@ with graph.as_default():
 
 # In[41]:
 
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0)
 
     checkpoint_dir = os.getcwd() + "/%s" % model_dir
 
