@@ -35,7 +35,7 @@ with graph.as_default():
         assert ckpt is not None, 'Trying to load an invalid checkpoint!'
         model.saver.restore(sess=session, save_path=ckpt)
         with open("{}-test-predictions".format(checkpoint_dir), "w") as out:
-            _, test_predictions = model.do_epoch(session=session, sequences=input_test_seq)
+            _, test_predictions = model.do_epoch(session=session, sequences=input_test_seq, labels=None,  mode='test')
             for img, pred in test_predictions.items():
                 # img = img.replace("challenge_2/Test-final/center/", "")
                 print("%s,%f" % (img, pred), file=out)
