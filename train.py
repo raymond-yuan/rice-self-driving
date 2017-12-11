@@ -12,7 +12,7 @@ with graph.as_default():
     # model = Komada(graph, mean, std)
     model_type = CNN
     # model_dir = "cnn"
-    model_dir = "deep-cnn"
+    model_dir = "deep-cnn-nvidia"
 
     if model_type is CNN:
         (train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std) = process_csv_cnn(filename="./data/train/output/interpolated.csv", val=25) # concatenated interpolated.csv from rosbags
@@ -24,7 +24,7 @@ with graph.as_default():
 
         train_seq_Y, valid_seq_Y, test_seq_Y = None, None, None
 
-    model = model_type(graph, mean, std)
+    model = model_type(graph, mean, std, dir=model_dir)
 
 # # Training
 #
@@ -66,8 +66,8 @@ with graph.as_default():
             if best_validation_score is None:
                 best_validation_score = valid_score
                 first = True
-            if valid_score < best_validation_score or first:
-                model.saver.save(session, '{}/checkpoint-sdc-ch2'.format(model_dir))
+            if valid_score < best_validation_score or True:
+                # model.saver.save(session, '{}/checkpoint-sdc-ch2'.format(model_dir))
                 best_validation_score = valid_score
                 print('\r', "SAVED at epoch %d" % epoch)
                 with open("%s/valid-predictions-epoch%d" % (model_dir, epoch), "w") as out:

@@ -96,15 +96,15 @@ class Model:
 
 
 class CNN(Model):
-    def __init__(self, graph, mean, std, batch_size=IMAGE_BATCH_SIZE):
+    def __init__(self, graph, mean, std, dir='deep-cnn', batch_size=IMAGE_BATCH_SIZE):
         self.global_train_step = 0
         self.global_valid_step = 0
         self.KEEP_PROB_CONV_TRAIN = 0.75
         self.KEEP_PROB_FC_TRAIN = 0.5
         self.batch_size = batch_size
 
-        self.train_writer = tf.summary.FileWriter('deep-cnn/train_summary', graph=graph)
-        self.valid_writer = tf.summary.FileWriter('deep-cnn/valid_summary', graph=graph)
+        self.train_writer = tf.summary.FileWriter('{}/train_summary'.format(dir), graph=graph)
+        self.valid_writer = tf.summary.FileWriter('{}/valid_summary'.format(dir), graph=graph)
 
         print('Building model')
         self.make_model(mean, std)
@@ -147,24 +147,8 @@ class CNN(Model):
             initial = tf.constant(0.1, shape=shape)
             return tf.Variable(initial)
 
-        def conv2d(x, W):
-            '''
-            Perform 2-D convolution
-            :param x: input tensor of size [N, W, H, Cin] where
-            N: the number of images
-            W: width of images
-            H: height of images
-            Cin: the number of channels of images
-            :param W: weight tensor [w, h, Cin, Cout]
-            w: width of the filters
-            h: height of the filters
-            Cin: the number of the channels of the filters = the number of channels of images
-            Cout: the number of filters
-            :return: a tensor of features extracted by the filters, a.k.a. the results after convolution
-            '''
-
-            # IMPLEMENT YOUR CONV2D HERE
-            return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+        def conv2d(x, W, stride):
+            return tf.nn.conv2d(x, W, strides=[1, stride, stride, 1], padding='VALID')
 
         def max_pool_2x2(x):
             '''
@@ -185,7 +169,8 @@ class CNN(Model):
 
         # inputs
         self.inputs = tf.placeholder(shape=(None, HEIGHT, WIDTH, CHANNELS), dtype=tf.float32, name="inputs") # images
-        self.preprocessed_inputs = tf.image.resize_images(self.inputs, (256, 140))
+        inputs = self.inputs - mean[0] / std[0]
+        self.preprocessed_inputs = tf.image.resize_images(inputs, (160, 120))
 
         print('Input Shape: {}\nDownsample: {}'.format(self.inputs.get_shape().as_list(),
                                                        self.preprocessed_inputs.get_shape().as_list())
@@ -197,42 +182,113 @@ class CNN(Model):
         self.conv_dropout = tf.placeholder(tf.float32, name="conv_dropout")
         self.fc_dropout = tf.placeholder(tf.float32, name="fc_dropout")
 
-        conv1 = weight_variable([3, 3, 3, 32])
-        b1 = bias_variable([32])
-        h1 = tf.nn.relu(conv2d(self.preprocessed_inputs, conv1) + b1)
-        # d1 = tf.nn.dropout(h1, self.conv_dropout)
-        # pool1 = max_pool_2x2(d1)
+        # conv1 = weight_variable([3, 3, 3, 32])
+        # b1 = bias_variable([32])
+        # h1 = tf.nn.relu(conv2d(self.preprocessed_inputs, conv1) + b1)
+        # # d1 = tf.nn.dropout(h1, self.conv_dropout)
+        # # pool1 = max_pool_2x2(d1)
+        #
+        # conv2 = weight_variable([3, 3, 32, 32])
+        # b2 = bias_variable([32])
+        # h2 = tf.nn.relu(conv2d(h1, conv2) + b2)
+        # pool1 = max_pool_2x2(h2) # 25% dropout
+        # d1 = tf.nn.dropout(pool1, self.conv_dropout)
+        #
+        # conv3 = weight_variable([3, 3, 32, 64])
+        # b3 = bias_variable([64])
+        # h3 = tf.nn.relu(conv2d(d1, conv3) + b3)
+        #
+        # conv4 = weight_variable([3,3,64,64])
+        # b4 = bias_variable([64])
+        # h4 = tf.nn.relu(conv2d(h3, conv4) + b4)
+        # pool2 = max_pool_2x2(h4)
+        # d2 = tf.nn.dropout(pool2, self.conv_dropout)
+        #
+        # # None, 64, 35, 64
+        # print('POOL ', d2.get_shape().as_list())
+        # new_shape = 1
+        # for s in d2.get_shape().as_list()[1:]:
+        #     new_shape *= s
+        # fc1 = weight_variable([new_shape, 512])
+        # bfc1 = bias_variable([512])
+        # pool2_flat = tf.reshape(d2, [-1, new_shape])
+        # h3 = tf.nn.relu(tf.matmul(pool2_flat, fc1) + bfc1)
+        # d3 = tf.nn.dropout(h3, self.fc_dropout)
+        #
+        # fc2 = weight_variable([512, 1])
+        # bfc2 = bias_variable([1])
+        W_conv1 = weight_variable([5, 5, 3, 24])
+        b_conv1 = bias_variable([24])
 
-        conv2 = weight_variable([3, 3, 32, 32])
-        b2 = bias_variable([32])
-        h2 = tf.nn.relu(conv2d(h1, conv2) + b2)
-        pool1 = max_pool_2x2(h2) # 25% dropout
-        d1 = tf.nn.dropout(pool1, self.conv_dropout)
+        h_conv1 = tf.nn.relu(conv2d(self.preprocessed_inputs, W_conv1, 2) + b_conv1)
 
-        conv3 = weight_variable([3, 3, 32, 64])
-        b3 = bias_variable([64])
-        h3 = tf.nn.relu(conv2d(d1, conv3) + b3)
+        # second convolutional layer
+        W_conv2 = weight_variable([5, 5, 24, 36])
+        b_conv2 = bias_variable([36])
 
-        conv4 = weight_variable([3,3,64,64])
-        b4 = bias_variable([64])
-        h4 = tf.nn.relu(conv2d(h3, conv4) + b4)
-        pool2 = max_pool_2x2(h4)
-        d2 = tf.nn.dropout(pool2, self.conv_dropout)
+        h_conv2 = tf.nn.relu(conv2d(h_conv1, W_conv2, 2) + b_conv2)
 
-        # None, 64, 35, 64
-        print('POOL ', d2.get_shape().as_list())
+        # third convolutional layer
+        W_conv3 = weight_variable([5, 5, 36, 48])
+        b_conv3 = bias_variable([48])
+
+        h_conv3 = tf.nn.relu(conv2d(h_conv2, W_conv3, 2) + b_conv3)
+
+        # fourth convolutional layer
+        W_conv4 = weight_variable([3, 3, 48, 64])
+        b_conv4 = bias_variable([64])
+
+        h_conv4 = tf.nn.relu(conv2d(h_conv3, W_conv4, 1) + b_conv4)
+
+        # fifth convolutional layer
+        W_conv5 = weight_variable([3, 3, 64, 64])
+        b_conv5 = bias_variable([64])
+
+        h_conv5 = tf.nn.relu(conv2d(h_conv4, W_conv5, 1) + b_conv5)
+
+        # FCL 1
         new_shape = 1
-        for s in d2.get_shape().as_list()[1:]:
+        for s in h_conv5.get_shape().as_list()[1:]:
             new_shape *= s
-        fc1 = weight_variable([new_shape, 512])
-        bfc1 = bias_variable([512])
-        pool2_flat = tf.reshape(d2, [-1, new_shape])
-        h3 = tf.nn.relu(tf.matmul(pool2_flat, fc1) + bfc1)
-        d3 = tf.nn.dropout(h3, self.fc_dropout)
+        W_fc1 = weight_variable([new_shape, 1164])
+        b_fc1 = bias_variable([1164])
 
-        fc2 = weight_variable([512, 1])
-        bfc2 = bias_variable([1])
-        self.steering_predictions = tf.matmul(d3, fc2) + bfc2
+        h_conv5_flat = tf.reshape(h_conv5, [-1, new_shape])
+        h_fc1 = tf.nn.relu(tf.matmul(h_conv5_flat, W_fc1) + b_fc1)
+
+        # keep_prob = tf.placeholder(tf.float32)
+        h_fc1_drop = tf.nn.dropout(h_fc1, self.fc_dropout)
+
+        # FCL 2
+        W_fc2 = weight_variable([1164, 100])
+        b_fc2 = bias_variable([100])
+
+        h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+
+        h_fc2_drop = tf.nn.dropout(h_fc2, self.fc_dropout)
+
+        # FCL 3
+        W_fc3 = weight_variable([100, 50])
+        b_fc3 = bias_variable([50])
+
+        h_fc3 = tf.nn.relu(tf.matmul(h_fc2_drop, W_fc3) + b_fc3)
+
+        h_fc3_drop = tf.nn.dropout(h_fc3, self.fc_dropout)
+
+        # FCL 3
+        W_fc4 = weight_variable([50, 10])
+        b_fc4 = bias_variable([10])
+
+        h_fc4 = tf.nn.relu(tf.matmul(h_fc3_drop, W_fc4) + b_fc4)
+
+        h_fc4_drop = tf.nn.dropout(h_fc4, self.fc_dropout)
+
+        # Output
+        W_fc5 = weight_variable([10, 1])
+        b_fc5 = bias_variable([1])
+
+        self.steering_predictions = tf.multiply(tf.atan(tf.matmul(h_fc4_drop, W_fc5) + b_fc5), 2) * std[0] + mean[0]# scale the atan outpu
+        # self.steering_predictions = tf.matmul(d3, fc2) + bfc2
 
         # Summary statistics
         # weights = [conv1, conv2, fc1, fc2]
@@ -279,7 +335,9 @@ class CNN(Model):
             if mode == "train":
                 feed_dict.update({self.conv_dropout: self.KEEP_PROB_CONV_TRAIN, self.fc_dropout: self.KEEP_PROB_FC_TRAIN})
 
-                summary, _, loss = session.run([self.summary_op, self.optimizer, self.rmse], feed_dict=feed_dict)
+                preds, summary, _, loss = session.run([self.steering_predictions, self.summary_op, self.optimizer, self.rmse], feed_dict=feed_dict)
+                from pdb import set_trace
+                set_trace()
                 self.train_writer.add_summary(summary, self.global_train_step)
                 self.global_train_step += 1
             elif mode == "valid":
@@ -301,11 +359,8 @@ class CNN(Model):
             elif mode == "test":
                 feed_dict.update({self.conv_dropout: 1.0, self.fc_dropout: 1.0})
                 model_predictions = \
-                    session.run([
-                        self.steering_predictions
-                    ],
-                        feed_dict=feed_dict)
-                model_predictions = model_predictions[0].flatten()
+                    session.run(self.steering_predictions, feed_dict=feed_dict)
+                model_predictions = model_predictions.flatten()
                 for i, img_path in enumerate(input_paths):
                     test_predictions[img_path] = model_predictions[i]
             if mode != "test" and step % 100 == 0:
