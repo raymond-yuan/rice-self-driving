@@ -116,7 +116,7 @@ def visualize_occlussion_map(model, original_img, session):
     img = original_img
 
     # base_angle = model.predict(np.expand_dims(np.array(img), 0), session)[0]
-    _, preds = model.do_epoch(session=session, sequences=np.expands_dims(np.array(img)), labels=None, mode='test')
+    _, preds = model.do_epoch(session=session, sequences=np.expand_dims(np.array(img), 0), labels=None, mode='test')
     base_angle = preds.values()[0]
 
     for x in range(0, img.shape[1], 2):
