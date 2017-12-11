@@ -307,6 +307,11 @@ class CNN(Model):
         print()
         return (np.sqrt(acc_loss / total_num_steps), valid_predictions) if mode != "test" else (None, test_predictions)
 
+    def predict(imgs, session):
+        feed_dict = {self.inputs: imgs, self.conv_dropout: 1.0, self.fc_dropout: 1.0}
+        model_predictions = session.run([self.steering_predictions], feed_dict=feed_dict)
+        assert len(model_predictions) == len(imgs)
+        return model_predictions[:, 1] # return the angle
 
 class Komada(Model):
     def __init__(self, graph, mean, std):

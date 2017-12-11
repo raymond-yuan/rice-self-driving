@@ -110,3 +110,8 @@ v3/
 \.idea/
 .history/
 test-predictions-epoch44
+checkpoint
+checkpoint-sdc-ch2.data-00000-of-00001
+checkpoint-sdc-ch2.index
+checkpoint-sdc-ch2.meta
+deep-cnn/

@@ -42,6 +42,8 @@ class ImageGenerator(object):
     def next(self):
 
         perm_ind = np.random.permutation(self.num_examples)
+        print(self.sequence_X)
+        print(self.sequence_Y)
         while True:
             for i in range(0, self.num_examples, self.batch_size):
                 start = time.time()
