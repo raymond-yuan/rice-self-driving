@@ -285,11 +285,7 @@ class CNN(Model):
                                 feed_dict=feed_dict)
                 self.valid_writer.add_summary(summary, self.global_valid_step)
                 self.global_valid_step += 1
-<<<<<<< HEAD
                 # feed_inputs = feed_inputs.flatten()
-=======
-                feed_inputs = feed_inputs.flatten()
->>>>>>> f152f88088a04d4692d01bd1ca6a48ae3a28b6b9
                 steering_targets = feed_targets.flatten()
                 model_predictions = model_predictions.flatten()
                 stats = np.stack([steering_targets, model_predictions, (steering_targets - model_predictions) ** 2])
@@ -302,7 +298,7 @@ class CNN(Model):
                         self.steering_predictions
                     ],
                         feed_dict=feed_dict)
-                model_predictions = model_predictions.flatten()
+                model_predictions = model_predictions
                 for i, img_path in enumerate(input_paths):
                     test_predictions[img_path] = model_predictions[i]
             if mode != "test" and step % 100 == 0:

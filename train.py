@@ -56,19 +56,21 @@ with graph.as_default():
                 model.do_epoch(session=session, sequences=train_seq_X, labels=train_seq_Y, mode="train")
             print("Validation:")
             valid_score, valid_predictions = model.do_epoch(session=session, sequences=valid_seq_X, labels=valid_seq_Y, mode="valid")
+            first = False
             if best_validation_score is None:
                 best_validation_score = valid_score
-            if valid_score < best_validation_score:
+                first = True
+            if valid_score < best_validation_score or first:
                 model.saver.save(session, '{}/checkpoint-sdc-ch2'.format(model_dir))
                 best_validation_score = valid_score
                 print('\r', "SAVED at epoch %d" % epoch)
-                with open("%s/valid-predictions-epoch%d" % model_dir, epoch, "w") as out:
+                with open("%s/valid-predictions-epoch%d" % (model_dir, epoch), "w") as out:
                     result = np.float128(0.0)
                     for img, stats in valid_predictions.items():
                         print(img, stats, file=out)
                         result += stats[-1]
                 print("Validation unnormalized RMSE:", np.sqrt(result / len(valid_predictions)))
-                with open("%s/test-predictions-epoch%d" % model_dir, epoch, "w") as out:
+                with open("%s/test-predictions-epoch%d" % (model_dir, epoch), "w") as out:
                     _, test_predictions = model.do_epoch(session=session, sequences=test_seq_X, labels=test_seq_Y, mode="test")
                     print("frame_id,steering_angle", file=out)
                     for img, pred in test_predictions.items():
