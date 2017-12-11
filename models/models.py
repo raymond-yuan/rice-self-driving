@@ -96,11 +96,12 @@ class Model:
 
 
 class CNN(Model):
-    def __init__(self, graph, mean, std):
+    def __init__(self, graph, mean, std, batch_size=IMAGE_BATCH_SIZE):
         self.global_train_step = 0
         self.global_valid_step = 0
         self.KEEP_PROB_CONV_TRAIN = 0.75
         self.KEEP_PROB_FC_TRAIN = 0.5
+        self.batch_size = batch_size
 
         self.train_writer = tf.summary.FileWriter('deep-cnn/train_summary', graph=graph)
         self.valid_writer = tf.summary.FileWriter('deep-cnn/valid_summary', graph=graph)
@@ -189,7 +190,7 @@ class CNN(Model):
         print('Input Shape: {}\nDownsample: {}'.format(self.inputs.get_shape().as_list(),
                                                        self.preprocessed_inputs.get_shape().as_list())
               )
-        self.targets = tf.placeholder(shape=(IMAGE_BATCH_SIZE,),
+        self.targets = tf.placeholder(shape=(self.batch_size,),
                                  dtype=tf.float32, name="targets")  # seq_len x batch_size x OUTPUT_DIM
         targets_normalized = (self.targets - mean[0]) / std[0]
 
@@ -263,7 +264,7 @@ class CNN(Model):
         test_predictions = {}
         valid_predictions = {}
         if not generator:
-            batch_generator = ImageGenerator(sequence_X=sequences, sequence_Y=labels, batch_size=IMAGE_BATCH_SIZE)
+            batch_generator = ImageGenerator(sequence_X=sequences, sequence_Y=labels, batch_size=self.batch_size)
         else:
             batch_generator = generator
         total_num_steps = batch_generator.get_total_steps()

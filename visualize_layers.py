@@ -110,12 +110,12 @@ def visualize_hypercolumns(model, original_img):
     both = both / np.max(both)
     return both
 
-def visualize_occlussion_map(model, original_img, session):
+def visualize_occlussion_map(model, original_img, session, batch_size):
     imgs, windows = [], []
     # img = cv2.resize(original_img, (200, 66))
     img = original_img
 
-    generator = WindowGenerator(img, 40, 50, 50)
+    generator = WindowGenerator(img, batch_size, 50, 50)
     base_angle = model.predict(np.expand_dims(np.array(img), 0), session)[0]
     # _, preds = model.do_epoch(session=session, sequences=np.expand_dims(np.array(img), 0), labels=None, mode='test')
     # base_angle = list(preds.values())[0]
@@ -171,19 +171,20 @@ if __name__ == "__main__":
                       "hypercolumns" : visualize_hypercolumns, \
                       "occlusion" : visualize_occlussion_map}
     graph = tf.Graph()
+    batch_size = 40
     with graph.as_default():
         (train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std) = process_csv_cnn(
             filename="./data/train/output/interpolated.csv", val=25)  # concatenated interpolated.csv from rosbags
         # interpolated.csv for testset filled with dummy values
         test_seq_X, test_seq_Y = read_csv(
             "./data/test/final_example.csv", train=False, cnn=True)
-        model = CNN(graph, mean, std)
+        model = CNN(graph, mean, std, batch_size)
         model_dir = "deep-cnn"
         checkpoint_dir = os.getcwd() + "/%s" % model_dir
         ckpt = tf.train.latest_checkpoint(checkpoint_dir)
         with tf.Session(graph=graph) as session:
             model.saver.restore(sess=session, save_path=ckpt)
-            output = visualizations[args.type](model, img * 1, session)
+            output = visualizations[args.type](model, img * 1, session, batch_size)
     output = np.uint8(255 * output)
     output = cv2.resize(output, original_shape[0:2][::-1])
 
