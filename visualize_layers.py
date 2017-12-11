@@ -114,15 +114,16 @@ def visualize_occlussion_map(model, original_img, session, batch_size):
     imgs, windows = [], []
     # img = cv2.resize(original_img, (200, 66))
     img = original_img
+    stride = 16
 
-    generator = WindowGenerator(img, batch_size, 50, 50)
+    generator = WindowGenerator(img, batch_size, 50, 50, stride=stride)
     base_angle = model.predict(np.expand_dims(np.array(img), 0), session)[0]
     # _, preds = model.do_epoch(session=session, sequences=np.expand_dims(np.array(img), 0), labels=None, mode='test')
     # base_angle = list(preds.values())[0]
     print(base_angle)
 
-    for x in range(0, img.shape[1], 2):
-        for y in range(0, img.shape[0], 2):
+    for x in range(0, img.shape[1], stride):
+        for y in range(0, img.shape[0], stride):
             # windows.append((x, y, 15, 15))
             windows.append((x, y, 50, 50))
 
@@ -134,7 +135,7 @@ def visualize_occlussion_map(model, original_img, session, batch_size):
 
     # print(len(imgs))
     _, test_predictions = model.do_epoch(session=session, sequences=imgs, labels=None, mode='test',
-                                            generator=generator)
+                                            gen=generator)
     angles = list(test_predictions.values())
     result = np.zeros(shape = img.shape[0:2], dtype = np.float32)
     # generator = WindowGenerator(img, batch_size, 50, 50)
@@ -146,12 +147,17 @@ def visualize_occlussion_map(model, original_img, session, batch_size):
         #     x, y, w, h = window
         #     result[y : y + h, x : x + w] += diff
         #     idx += 1
+
+    print(len(windows))
+    print(len(angles))
     for idx, window in enumerate(windows):
         diff = np.abs(angles[idx] - base_angle)
         x, y, w, h = window
         result[y: y + h, x: x + w] += diff
-
     mask = np.abs(result)
+    from pdb import set_trace
+    set_trace()
+    print(np.max(mask))
     mask = mask / np.max(np.max(mask))
     #mask[np.where(mask < np.percentile(mask, 60))] = 0
     mask = cv2.resize(mask, original_img.shape[0:2][::-1])
@@ -176,7 +182,8 @@ if __name__ == "__main__":
     img = cv2.imread(args.image_path, 1)
     original_shape = img.shape
     img = np.float32(img)
-
+    print(args.image_path)
+    print(img)
     visualizations = {"cam" : visualize_grad_cam, \
                       "hypercolumns" : visualize_hypercolumns, \
                       "occlusion" : visualize_occlussion_map}

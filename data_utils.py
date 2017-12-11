@@ -63,32 +63,38 @@ class ImageGenerator(object):
         return self.num_examples // self.batch_size
 
 class WindowGenerator(object):
-    def __init__(self, img, batch_size, window_width, window_height):
+    def __init__(self, img, batch_size, window_width, window_height, stride=4):
         self.batch_size = batch_size
         self.window_width = window_width
         self.img = img
         self.window_height = window_height
+        self.stride = stride
     
     def next(self):
         while True:
             ct = 0
             imgs = []
-            for x in range(0, self.img.shape[1], 2):
-                for y in range(0, self.img.shape[0], 2):
+            times = []
+            for x in range(0, self.img.shape[1], self.stride):
+                for y in range(0, self.img.shape[0], self.stride):
                     x,y,w,h = (x, y, self.window_width, self.window_height)
                     masked = self.img * 1
                     masked[y: y + h, x: x + w] = 0
-                    imgs.append(masked)
+                    # print(sum(masked))
+                    # print(x,y)
+                    imgs.append(np.copy(masked))
+                    times.append(str(time.time()))
                     ct += 1
                     if ct == self.batch_size:
                         ct = 0
-                        yield imgs, [0.0] * self.batch_size, [str(x) + str(y) + str(i) for i in range(self.batch_size)]
+                        yield imgs, [0.0] * self.batch_size, times
                         imgs = []
+                        times = []
             if imgs:
-                yield imgs, [0.0] * self.batch_size, [str(x) + str(y) + str(i) for i in range(self.batch_size)]
+                yield imgs, [0.0] * self.batch_size, [str(time.time()) + str(i) for i in range(self.batch_size)]
 
     def get_total_steps(self):
-        return int(((self.img.shape[1] / 2 + self.img.shape[0] / 2) // self.batch_size) + 1)
+        return int((self.img.shape[1] / self.stride * (self.img.shape[0] / self.stride)) // self.batch_size)
 
 class BatchGenerator(object):
     def __init__(self, sequence, seq_len, batch_size):
