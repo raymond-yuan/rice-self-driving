@@ -267,6 +267,7 @@ class CNN(Model):
         acc_loss = np.float128(0.0)
         for step in range(total_num_steps):
             feed_inputs, feed_targets, input_paths = next(batch_generator.next())
+            print("FEED INPUTS", feed_inputs)
             # print('FINISHGEED MAKING BACH')
             feed_dict = {self.inputs: feed_inputs, self.targets: feed_targets}
             if mode == "train":
