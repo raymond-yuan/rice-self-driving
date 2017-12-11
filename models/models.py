@@ -303,7 +303,7 @@ class CNN(Model):
                         self.steering_predictions
                     ],
                         feed_dict=feed_dict)
-                model_predictions = model_predictions
+                model_predictions = model_predictions[0].flatten()
                 for i, img_path in enumerate(input_paths):
                     test_predictions[img_path] = model_predictions[i]
             if mode != "test" and step % 100 == 0:
