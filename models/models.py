@@ -257,20 +257,22 @@ class CNN(Model):
         self.saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
 
 
-    def do_epoch(self, session, sequences, labels, mode, generator=None):
+    def do_epoch(self, session, sequences, labels, mode, gen=None):
         """
         batch generator will return np arrays
         """
         test_predictions = {}
         valid_predictions = {}
-        if not generator:
+        if not gen:
             batch_generator = ImageGenerator(sequence_X=sequences, sequence_Y=labels, batch_size=self.batch_size)
         else:
-            batch_generator = generator
+            batch_generator = gen
         total_num_steps = batch_generator.get_total_steps()
         acc_loss = np.float128(0.0)
+        generator = batch_generator.next()
         for step in range(total_num_steps):
-            feed_inputs, feed_targets, input_paths = next(batch_generator.next())
+            feed_inputs, feed_targets, input_paths = next(generator)
+            assert(np.all(np.equal(feed_inputs[0], feed_inputs[1])) == False)
             # print("FEED INPUTS", feed_inputs)
             # print('FINISHGEED MAKING BACH')
             feed_dict = {self.inputs: feed_inputs, self.targets: feed_targets}
