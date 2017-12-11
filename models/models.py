@@ -256,13 +256,16 @@ class CNN(Model):
         self.saver = tf.train.Saver(write_version=tf.train.SaverDef.V2)
 
 
-    def do_epoch(self, session, sequences, labels, mode):
+    def do_epoch(self, session, sequences, labels, mode, generator=None):
         """
         batch generator will return np arrays
         """
         test_predictions = {}
         valid_predictions = {}
-        batch_generator = ImageGenerator(sequence_X=sequences, sequence_Y=labels, batch_size=IMAGE_BATCH_SIZE)
+        if not generator:
+            batch_generator = ImageGenerator(sequence_X=sequences, sequence_Y=labels, batch_size=IMAGE_BATCH_SIZE)
+        else:
+            batch_generator = generator
         total_num_steps = batch_generator.get_total_steps()
         acc_loss = np.float128(0.0)
         for step in range(total_num_steps):

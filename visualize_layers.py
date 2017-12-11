@@ -115,23 +115,26 @@ def visualize_occlussion_map(model, original_img, session):
     # img = cv2.resize(original_img, (200, 66))
     img = original_img
 
-    # base_angle = model.predict(np.expand_dims(np.array(img), 0), session)[0]
-    _, preds = model.do_epoch(session=session, sequences=np.expand_dims(np.array(img), 0), labels=None, mode='test')
-    base_angle = list(preds.values())[0]
+    generator = WindowGenerator(img, 40, 50, 50)
+    base_angle = model.predict(np.expand_dims(np.array(img), 0), session)[0]
+    # _, preds = model.do_epoch(session=session, sequences=np.expand_dims(np.array(img), 0), labels=None, mode='test')
+    # base_angle = list(preds.values())[0]
+    print(base_angle)
 
-    for x in range(0, img.shape[1], 2):
-        for y in range(0, img.shape[0], 2):
-            windows.append((x, y, 15, 15))
-            windows.append((x, y, 50, 50))
+    # for x in range(0, img.shape[1], 2):
+    #     for y in range(0, img.shape[0], 2):
+    #         windows.append((x, y, 15, 15))
+    #         windows.append((x, y, 50, 50))
 
-    for window in windows:
-        x, y, w, h = window
-        masked = img * 1
-        masked[y : y + h, x : x + w] = 0
-        imgs.append(masked)
+    # for window in windows:
+    #     x, y, w, h = window
+    #     masked = img * 1
+    #     masked[y : y + h, x : x + w] = 0
+    #     imgs.append(masked)
 
     print(imgs.shape)
-    _, test_predictions = model.do_epoch(session=session, sequences=imgs, labels=None, mode='test')
+    _, test_predictions = model.do_epoch(session=session, sequences=imgs, labels=None, mode='test',
+                                            generator=generator)
     angles = test_predictions.values()
     result = np.zeros(shape = img.shape[0:2], dtype = np.float32)
     for i, window in enumerate(windows):

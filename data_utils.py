@@ -40,7 +40,6 @@ class ImageGenerator(object):
         print('NUM EXAMPLES {}, BATCH SIZE {}'.format(self.num_examples, self.batch_size))
 
     def next(self):
-
         perm_ind = np.random.permutation(self.num_examples)
         print(self.sequence_X)
         print(self.sequence_Y)
@@ -62,6 +61,32 @@ class ImageGenerator(object):
 
     def get_total_steps(self):
         return self.num_examples // self.batch_size
+
+class WindowGenerator(object):
+    def __init__(self, img, batch_size, window_width, window_height):
+        self.batch_size = batch_size
+        self.window_width = window_width
+        self.img = img
+        self.window_height = window_height
+    
+    def next(self):
+        while True:
+            ct = 0
+            imgs = []
+            for x in range(0, self.img.shape[1], 2):
+                for y in range(0, self.img.shape[0], 2):
+                    x,y,w,h = (x, y, self.window_width, self.window_height)
+                    masked = self.img * 1
+                    masked[y: y + h, x: x + w] = 0
+                    imgs.append(masked)
+                    ct += 1
+                    if ct == self.batch_size:
+                        ct = 0
+                        yield imgs, None
+                        imgs = []
+
+    def get_total_steps(self):
+        return 1
 
 class BatchGenerator(object):
     def __init__(self, sequence, seq_len, batch_size):
