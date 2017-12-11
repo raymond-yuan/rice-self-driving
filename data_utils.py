@@ -84,9 +84,11 @@ class WindowGenerator(object):
                         ct = 0
                         yield imgs, None, [''] * self.batch_size
                         imgs = []
+            if imgs:
+                yield imgs, None, [''] * self.batch_size
 
     def get_total_steps(self):
-        return 1
+        return (self.img.shape[1] / 2 + self.img.shape[0] / 2) // self.batch_size + 1
 
 class BatchGenerator(object):
     def __init__(self, sequence, seq_len, batch_size):
