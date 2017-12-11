@@ -121,10 +121,10 @@ def visualize_occlussion_map(model, original_img, session, batch_size):
     # base_angle = list(preds.values())[0]
     print(base_angle)
 
-    # for x in range(0, img.shape[1], 2):
-    #     for y in range(0, img.shape[0], 2):
-    #         windows.append((x, y, 15, 15))
-    #         windows.append((x, y, 50, 50))
+    for x in range(0, img.shape[1], 2):
+        for y in range(0, img.shape[0], 2):
+            # windows.append((x, y, 15, 15))
+            windows.append((x, y, 50, 50))
 
     # for window in windows:
     #     x, y, w, h = window
@@ -137,15 +137,20 @@ def visualize_occlussion_map(model, original_img, session, batch_size):
                                             generator=generator)
     angles = list(test_predictions.values())
     result = np.zeros(shape = img.shape[0:2], dtype = np.float32)
-    generator = WindowGenerator(img, batch_size, 50, 50)
-    idx = 0
-    for i in range(generator.get_total_steps()):
-        windows = next(generator.next())
-        for window in windows:
-            diff = np.abs(angles[idx] - base_angle)
-            x, y, w, h = window
-            result[y : y + h, x : x + w] += diff
-            idx += 1
+    # generator = WindowGenerator(img, batch_size, 50, 50)
+    # idx = 0
+    # for i in range(generator.get_total_steps()):
+        # windows = next(generator.next())[0]
+        # for window in windows:
+        #     diff = np.abs(angles[idx] - base_angle)
+        #     x, y, w, h = window
+        #     result[y : y + h, x : x + w] += diff
+        #     idx += 1
+    for idx, window in enumerate(windows):
+        diff = np.abs(angles[idx] - base_angle)
+        x, y, w, h = window
+        result[y: y + h, x: x + w] += diff
+
     mask = np.abs(result)
     mask = mask / np.max(np.max(mask))
     #mask[np.where(mask < np.percentile(mask, 60))] = 0
