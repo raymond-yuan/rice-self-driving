@@ -127,7 +127,8 @@ def visualize_occlussion_map(model, original_img, session):
         masked[y : y + h, x : x + w] = 0
         imgs.append(masked)
 
-    angles = model.predict(np.array(imgs), session)
+    _, test_predictions = model.do_epoch(session=session, sequences=imgs, labels=None, mode='test')
+    angles = test_predictions.values()
     result = np.zeros(shape = img.shape[0:2], dtype = np.float32)
     for i, window in enumerate(windows):
         diff = np.abs(angles[i] - base_angle)
