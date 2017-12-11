@@ -6,7 +6,7 @@ from data_utils import *
 from models.models import *
 
 ### SET UP CONFIG FOR PREDICTIONS ###
-checkpoint_dir = './v4/'
+checkpoint_dir = './deep-cnn/'
 test_imgs_dir = './data/demo/' # './data/test/bike/'
 test_seq = os.listdir(test_imgs_dir)
 test_seq = list(map(lambda x: test_imgs_dir + x, test_seq))
@@ -19,7 +19,7 @@ graph = tf.Graph()
 with graph.as_default():
     # Build model
     # model = Komada(graph, mean, std)
-    model_type = Komada
+    model_type = CNN
 
     if model_type is CNN:
         (train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std) = process_csv_cnn(filename="./data/train/output/interpolated.csv", val=25) # concatenated interpolated.csv from rosbags
@@ -35,7 +35,7 @@ with graph.as_default():
         ckpt = tf.train.latest_checkpoint(checkpoint_dir)
         assert ckpt is not None, 'Trying to load an invalid checkpoint!'
         model.saver.restore(sess=session, save_path=ckpt)
-        with open("{}-test-predictions".format("./v4_model"), "w") as out:
+        with open("{}-test-predictions".format("./deepcnn_model"), "w") as out:
             _, test_predictions = model.do_epoch(session=session, sequences=input_test_seq, labels=None,  mode='test')
             for img, pred in test_predictions.items():
                 # img = img.replace("challenge_2/Test-final/center/", "")
