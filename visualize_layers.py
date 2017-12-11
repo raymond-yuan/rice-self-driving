@@ -112,8 +112,9 @@ def visualize_hypercolumns(model, original_img):
 
 def visualize_occlussion_map(model, original_img, session):
     imgs, windows = [], []
-    img = cv2.resize(original_img, (200, 66))
-    base_angle = model.predict(np.array(img), session)[0]
+    # img = cv2.resize(original_img, (200, 66))
+    img = original_img
+    base_angle = model.predict(np.expand_dims(np.array(img), 0), session)[0]
 
     for x in range(0, img.shape[1], 2):
         for y in range(0, img.shape[0], 2):
@@ -172,8 +173,8 @@ if __name__ == "__main__":
         model_dir = "deep-cnn"
         checkpoint_dir = os.getcwd() + "/%s" % model_dir
         ckpt = tf.train.latest_checkpoint(checkpoint_dir)
-        model.saver.restore(sess=session, save_path=ckpt)
         with tf.Session(graph=graph) as session:
+            model.saver.restore(sess=session, save_path=ckpt)
             output = visualizations[args.type](model, img * 1, session)
     output = np.uint8(255 * output)
     output = cv2.resize(output, original_shape[0:2][::-1])
