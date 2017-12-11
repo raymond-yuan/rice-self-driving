@@ -116,7 +116,7 @@ def visualize_occlussion_map(model, original_img, session, batch_size):
     img = original_img
     stride = 16
 
-    generator = WindowGenerator(img, batch_size, 50, 50, stride=stride)
+    generator = WindowGenerator(img, batch_size, 100, 100, stride=stride)
     base_angle = model.predict(np.expand_dims(np.array(img), 0), session)[0]
     # _, preds = model.do_epoch(session=session, sequences=np.expand_dims(np.array(img), 0), labels=None, mode='test')
     # base_angle = list(preds.values())[0]
@@ -125,7 +125,7 @@ def visualize_occlussion_map(model, original_img, session, batch_size):
     for x in range(0, img.shape[1], stride):
         for y in range(0, img.shape[0], stride):
             # windows.append((x, y, 15, 15))
-            windows.append((x, y, 50, 50))
+            windows.append((x, y, 100, 100))
 
     # for window in windows:
     #     x, y, w, h = window
@@ -150,6 +150,7 @@ def visualize_occlussion_map(model, original_img, session, batch_size):
 
     print(len(windows))
     print(len(angles))
+    print(angles[:10])
     for idx, window in enumerate(windows):
         diff = np.abs(angles[idx] - base_angle)
         x, y, w, h = window
