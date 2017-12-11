@@ -132,7 +132,7 @@ def visualize_occlussion_map(model, original_img, session):
     #     masked[y : y + h, x : x + w] = 0
     #     imgs.append(masked)
 
-    print(len(imgs))
+    # print(len(imgs))
     _, test_predictions = model.do_epoch(session=session, sequences=imgs, labels=None, mode='test',
                                             generator=generator)
     angles = test_predictions.values()
