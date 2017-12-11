@@ -135,7 +135,7 @@ def visualize_occlussion_map(model, original_img, session, batch_size):
 
     # print(len(imgs))
     _, test_predictions = model.do_epoch(session=session, sequences=imgs, labels=None, mode='test',
-                                            generator=generator)
+                                            gen=generator)
     angles = list(test_predictions.values())
     result = np.zeros(shape = img.shape[0:2], dtype = np.float32)
     # generator = WindowGenerator(img, batch_size, 50, 50)
