@@ -22,12 +22,15 @@ with graph.as_default():
     model_type = CNN
 
     if model_type is CNN:
-        (train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std) = process_csv_cnn(filename="./data/train/output/interpolated.csv", val=25) # concatenated interpolated.csv from rosbags
-        test_seq_X, test_seq_Y = read_csv("./data/test/final_example.csv", train=False, cnn=True) # interpolated.csv for testset filled with dummy values
+        # (train_seq_X, train_seq_Y, valid_seq_X, valid_seq_Y), (mean, std) = process_csv_cnn(filename="./data/train/output/interpolated.csv", val=25) # concatenated interpolated.csv from rosbags
+        # test_seq_X, test_seq_Y = read_csv("./data/test/final_example.csv", train=False, cnn=True) # interpolated.csv for testset filled with dummy values
+        mean, std = -0.0057757964, 0.26503262
 
     else:
-        (train_seq_X, valid_seq_X), (mean, std) = process_csv(filename="./data/train/output/interpolated.csv", val=5)
-        train_seq_Y, valid_seq_Y, test_seq_Y = None, None, None
+        # (train_seq_X, valid_seq_X), (mean, std) = process_csv(filename="./data/train/output/interpolated.csv", val=5)
+        # train_seq_Y, valid_seq_Y, test_seq_Y = None, None, None
+        mean, std = [-0.0057757964, - 0.073793308,
+                     15.845663], [0.26503262,  0.76966596, 5.631488]
 
     model = model_type(graph, mean, std)
 
